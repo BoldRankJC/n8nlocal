@@ -69,9 +69,9 @@ const RequestTracking = () => {
         setIsLoading(true);
 
         const [resResp, resForms, resDocxs] = await Promise.all([
-          fetch('https://accionaapi.vercel.app/api/respuestas/'),
-          fetch('https://accionaapi.vercel.app/api/forms/'),
-          fetch('https://accionaapi.vercel.app/api/generador/docxs')
+          fetch('https://Boostedapi.vercel.app/api/respuestas/'),
+          fetch('https://Boostedapi.vercel.app/api/forms/'),
+          fetch('https://Boostedapi.vercel.app/api/generador/docxs')
         ]);
 
         if (!resResp.ok || !resForms.ok || !resDocxs.ok) {
@@ -277,7 +277,7 @@ const RequestTracking = () => {
 
     try {
       setIsLoading(true);
-      const res = await fetch(`https://accionaapi.vercel.app/api/respuestas/${requestId}`, {
+      const res = await fetch(`https://Boostedapi.vercel.app/api/respuestas/${requestId}`, {
         method: 'DELETE',
       });
 

@@ -9,7 +9,7 @@ const LiveChat = () => {
     {
       id: 1,
       sender: "bot",
-      message: "¡Hola! Soy el asistente virtual de Acciona HR. ¿En qué puedo ayudarte hoy?",
+      message: "¡Hola! Soy el asistente virtual de Boosted HR. ¿En qué puedo ayudarte hoy?",
       timestamp: new Date(Date.now() - 300000),
       avatar: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=40&h=40&fit=crop&crop=face"
     }
@@ -94,7 +94,7 @@ const LiveChat = () => {
             <Icon name="Bot" size={16} color="white" />
           </div>
           <div>
-            <h3 className="font-semibold">Soporte Acciona</h3>
+            <h3 className="font-semibold">Soporte Boosted</h3>
             <p className="text-xs opacity-90">En línea</p>
           </div>
         </div>

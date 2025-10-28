@@ -121,7 +121,7 @@ const FormProperties = ({ formData, categories, sections, onUpdateFormData }) =>
       try {
         setLoadingCompanies(true);
 
-        const response = await fetch('https://accionaapi.vercel.app/api/auth/empresas/todas');
+        const response = await fetch('https://Boostedapi.vercel.app/api/auth/empresas/todas');
 
         if (!response.ok) {
           throw new Error(`Error ${response.status}: ${response.statusText}`);

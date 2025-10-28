@@ -19,7 +19,7 @@ const ChatbotHome = () => {
     // Si la lista de mensajes está vacía, añade el saludo inicial
     if (messages.length === 0) {
       setMessages([
-          { id: 1, text: `Hola ${user}, soy el Asistente HR de Acciona. ¿En qué puedo ayudarte hoy?`, sender: 'ai' }
+          { id: 1, text: `Hola ${user}, soy el Asistente HR de Boosted. ¿En qué puedo ayudarte hoy?`, sender: 'ai' }
       ]);
     }
   }, []); // Se ejecuta solo al montar el componente
@@ -38,7 +38,7 @@ const ChatbotHome = () => {
     setIsSending(true);
 
     try {
-        const response = await fetch('https://accionaapi.vercel.app/api/ai-chat', { 
+        const response = await fetch('https://Boostedapi.vercel.app/api/ai-chat', { 
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

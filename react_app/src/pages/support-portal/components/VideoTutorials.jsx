@@ -16,7 +16,7 @@ const VideoTutorials = () => {
   const tutorials = [
     {
       id: 1,
-      title: "Introducción al Portal HR de Acciona",
+      title: "Introducción al Portal HR de Boosted",
       description: "Conoce las funcionalidades principales y cómo navegar por el portal",
       category: "getting-started",
       duration: "5:30",
@@ -205,7 +205,7 @@ const VideoTutorials = () => {
               Tutorial Destacado de la Semana
             </h3>
             <p className="text-muted-foreground mb-3">
-              "Introducción al Portal HR de Acciona" - Perfecto para nuevos usuarios
+              "Introducción al Portal HR de Boosted" - Perfecto para nuevos usuarios
             </p>
             <Button size="sm" onClick={() => handlePlayVideo(tutorials?.[0])}>
               Ver Ahora

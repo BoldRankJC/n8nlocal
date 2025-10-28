@@ -23,7 +23,7 @@ const ContactSupport = () => {
       icon: 'Mail',
       availability: '24/7',
       responseTime: '2-4 horas',
-      contact: 'soporte@acciona.cl',
+      contact: 'soporte@Boosted.cl',
       color: 'bg-primary'
     },
     {

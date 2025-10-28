@@ -34,7 +34,7 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse, className = '' }) => {
     const fetchMenu = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`https://accionaapi.vercel.app/api/menu/filter`, {
+        const response = await fetch(`https://Boostedapi.vercel.app/api/menu/filter`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

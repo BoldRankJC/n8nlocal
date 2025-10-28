@@ -15,7 +15,7 @@ const DocxPreviewModal = ({ IDdoc, isVisible, onClose }) => {
       setError(null);
       try {
         const res = await fetch(
-          `https://accionaapi.vercel.app/api/generador/preview/${IDdoc}`
+          `https://Boostedapi.vercel.app/api/generador/preview/${IDdoc}`
         );
         const data = await res.json();
 

@@ -51,7 +51,7 @@ const Header = ({ className = '' }) => {
 
     useEffect(() => {
       const fetchUnreadCount = async () => {
-        const response = await fetch(`https://accionaapi.vercel.app/api/noti/${userMail}/unread-count`);
+        const response = await fetch(`https://Boostedapi.vercel.app/api/noti/${userMail}/unread-count`);
         const data = await response.json();
         console.log("No leídas:", data.unreadCount);
         setUnreadCount(data.unreadCount);
@@ -124,7 +124,7 @@ const Header = ({ className = '' }) => {
           </div>
           <div className="flex flex-col">
             <h1 className="text-lg font-semibold text-foreground leading-tight">
-              Acciona HR Portal
+              Boosted HR Portal
             </h1>
             <span className="text-xs text-muted-foreground font-mono">
               Employee Experience Platform

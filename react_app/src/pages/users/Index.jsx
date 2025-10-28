@@ -23,7 +23,7 @@ const FormReg = () => {
     const fetchEmpresas = async () => {
       try {
         setLoadingEmpresas(true);
-        const response = await fetch('https://accionaapi.vercel.app/api/auth/empresas/todas');
+        const response = await fetch('https://Boostedapi.vercel.app/api/auth/empresas/todas');
         
         if (!response.ok) {
           throw new Error('Error al cargar empresas');
@@ -41,7 +41,7 @@ const FormReg = () => {
         console.error('Error cargando empresas:', error);
         // Fallback con empresas de ejemplo
         setEmpresas([
-          { value: 'Acciona', label: 'Acciona' },
+          { value: 'Boosted', label: 'Boosted' },
           { value: 'Empresa Ejemplo 1', label: 'Empresa Ejemplo 1' },
           { value: 'Empresa Ejemplo 2', label: 'Empresa Ejemplo 2' },
         ]);
@@ -67,7 +67,7 @@ const FormReg = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await fetch(`https://accionaapi.vercel.app/api/auth/`);
+        const res = await fetch(`https://Boostedapi.vercel.app/api/auth/`);
         if (!res.ok) throw new Error('Usuarios no encontrados');
         const data = await res.json();
         setUsers(data);
@@ -101,7 +101,7 @@ const FormReg = () => {
     try {
       setIsLoading(true);
       
-      const userResponse = await fetch('https://accionaapi.vercel.app/api/auth/register', {
+      const userResponse = await fetch('https://Boostedapi.vercel.app/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -120,7 +120,7 @@ const FormReg = () => {
       const saved = await userResponse.json();
       const savedUser = saved?.user;
       
-      const mailResponse = await fetch('https://accionaapi.vercel.app/api/mail/send', {
+      const mailResponse = await fetch('https://Boostedapi.vercel.app/api/mail/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -135,7 +135,7 @@ const FormReg = () => {
               <p>Hola <strong>${formData.nombre} ${formData.apellido}</strong>,</p>
               <p>Has sido registrado en nuestra plataforma. Para completar tu registro y establecer tu contraseña, haz clic en el siguiente botón:</p>
               <div style="text-align: center; margin: 30px 0;">
-                <a href="https://infoacciona.vercel.app/set-password?userId=${savedUser?.id || savedUser?._id}" 
+                <a href="https://infoBoosted.vercel.app/set-password?userId=${savedUser?.id || savedUser?._id}" 
                    style="background-color: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
                   Establecer Contraseña
                 </a>
@@ -167,7 +167,7 @@ const FormReg = () => {
         rol: 'user'
       });
 
-      const res = await fetch(`https://accionaapi.vercel.app/api/auth/`);
+      const res = await fetch(`https://Boostedapi.vercel.app/api/auth/`);
       const data = await res.json();
       setUsers(data);
 
