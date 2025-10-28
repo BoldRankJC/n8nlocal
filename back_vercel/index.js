@@ -25,7 +25,7 @@ let db;
 async function connectDB() {
   if (!db) {
     await client.connect();
-    db = client.db("formsdb");
+    db = client.db("n8nDB");
     console.log("Conectado a MongoDB");
   }
   return db;
