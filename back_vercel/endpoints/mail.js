@@ -14,12 +14,12 @@ const router = express.Router();
 // ⚠️ Reemplaza por tus valores (o idealmente usa variables de entorno)
 const ACCESS_KEY = "MI_CLAVE_SECRETA_AQUI";
 const MAIL_CREDENTIALS = {
-  host: "mail.infoacciona.cl",
+  host: "<inserte host>",
   port: 465,
   secure: true, // true si usas 465
   auth: {
-    user: "administracion@infoacciona.cl",
-    pass: "Vicente2025",
+    user: "<inserte mail>",
+    pass: "<inserte pass>",
   },
 };
 const MAX_RECIPIENTS = 10;

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Importamos useEffect para leer el tema
 import { useNavigate, useLocation } from "react-router-dom";
 
 export default function LoginPage() {
@@ -12,6 +12,11 @@ export default function LoginPage() {
 
   const from = location.state?.from?.pathname || "/";
 
+  // Función para obtener el estado del tema (dark o light)
+  // NOTA: Esto solo es para leer el tema para fines visuales en el cliente.
+  // La aplicación real debería leer la clase 'dark' del <html>.
+  const isDarkMode = document.documentElement.classList.contains('dark');
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -45,21 +50,60 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
-        {error && <p className="text-red-500 mb-4">{error}</p>}
+    // Contenedor principal: Ocupa toda la pantalla y usa el fondo del tema (Blanco -> Negro)
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      
+      {/* Formulario: Utiliza bg-card, sombra de marca, y borde dinámico */}
+      <form 
+        onSubmit={handleSubmit} 
+        className="bg-card p-8 rounded-xl shadow-brand border border-border w-full max-w-md transition-colors duration-300"
+      >
+        <h2 className="text-2xl font-bold mb-6 text-center text-foreground">
+          Portal de Ingreso
+        </h2>
+        
+        {/* Mensaje de error: Usa el color 'error' de tu paleta */}
+        {error && <p className="text-error mb-4">{error}</p>}
+        
+        {/* Campo de Email */}
         <div className="mb-4">
-          <label className="block mb-2 font-semibold">Email</label>
-          <input type="email" className="w-full border p-2 rounded" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <label className="block mb-2 font-semibold text-foreground">Email</label>
+          <input 
+            type="email" 
+            // Input: Usa bg-input, borde dinámico y ring dinámico (para el focus)
+            className="w-full border border-border p-3 rounded-lg bg-input text-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors duration-200" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+            required 
+          />
         </div>
+        
+        {/* Campo de Contraseña */}
         <div className="mb-6">
-          <label className="block mb-2 font-semibold">Contraseña</label>
-          <input type="password" className="w-full border p-2 rounded" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <label className="block mb-2 font-semibold text-foreground">Contraseña</label>
+          <input 
+            type="password" 
+            // Input: Usa bg-input, borde dinámico y ring dinámico (para el focus)
+            className="w-full border border-border p-3 rounded-lg bg-input text-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors duration-200" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            required 
+          />
         </div>
-        <button type="submit" className="w-full bg-[#f97316] text-white py-2 rounded font-bold hover:bg-orange-500 transition">
+        
+        {/* Botón de Ingreso: Utiliza el color principal (Celeste) */}
+        <button 
+          type="submit" 
+          // Botón: Usa bg-primary y asegura texto en primary-foreground
+          className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-bold hover:bg-opacity-90 transition-opacity duration-200"
+        >
           Ingresar
         </button>
+        
+        {/* Opcional: Footer con color secundario (Dorado) para un toque */}
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+            Portal exclusivo para empleados de <span className="text-secondary font-semibold">Boosted</span>.
+        </p>
       </form>
     </div>
   );
