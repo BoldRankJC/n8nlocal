@@ -1,0 +1,225 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap');
+@import 'docx-preview/dist/docx-preview.css';
+
+@layer base {
+  /* ======================================================= */
+  /* TEMA CLARO (Celeste Principal / Blanco)   */
+  /* ======================================================= */
+  :root {
+    /* Core Colors (Blanco/Claro) */
+    --color-background: #FFFFFF; /* Blanco */
+    --color-foreground: #1E293B; /* Texto Negro/Gris Oscuro */
+    --color-border: #E5E7EB; /* Gris Claro (Border) */
+    --color-input: #FFFFFF; /* Blanco */
+    --color-ring: #00AEEF; /* Celeste Principal */
+    
+    /* Card/Surface (Blanco/Claro) */
+    --color-card: #FFFFFF; /* Blanco */
+    --color-card-foreground: #1E293B; /* Texto Negro/Gris Oscuro */
+    --color-popover: #FFFFFF; /* Blanco */
+    --color-popover-foreground: #1E293B; /* Texto Negro/Gris Oscuro */
+    --color-surface: #FFFFFF; /* Blanco */
+    --color-surface-foreground: #1E293B; /* Texto Negro/Gris Oscuro */
+    
+    /* Muted Colors (Grises claros) */
+    --color-muted: #F3F4F6; /* Gris muy claro */
+    --color-muted-foreground: #6B7280; /* Gris medio */
+    
+    /* Primary (Celeste) */
+    --color-primary: #00AEEF; /* Celeste Principal */
+    --color-primary-foreground: #FFFFFF; /* Blanco */
+    
+    /* Secondary (Dorado) */
+    --color-secondary: #FFD700; /* Dorado Secundario */
+    --color-secondary-foreground: #1E293B; /* Texto Negro */
+    
+    /* Accent (Mantenemos un color vibrante) */
+    --color-accent: #0D9488; /* Teal */
+    --color-accent-foreground: #FFFFFF; /* Blanco */
+    
+    /* Status Colors */
+    --color-success: #059669; /* Verde */
+    --color-success-foreground: #FFFFFF;
+    --color-warning: #ffae00; /* Ámbar */
+    --color-warning-foreground: #FFFFFF;
+    --color-error: #DC2626; /* Rojo */
+    --color-error-foreground: #FFFFFF;
+    --color-destructive: #DC2626; /* Rojo */
+    --color-destructive-foreground: #FFFFFF;
+    
+    /* Brand Specific (Puedes ajustarlo a Celeste) */
+    --color-brand-indigo: #00AEEF; /* Celeste Principal */
+    --color-brand-indigo-foreground: #FFFFFF; 
+    
+    /* Text Hierarchy (Negro/Grises) */
+    --color-text-primary: #1E293B; /* Negro/Gris Oscuro */
+    --color-text-secondary: #6B7280; /* Gris medio */
+  }
+
+  /* ======================================================= */
+  /* TEMA OSCURO (.dark)                       */
+  /* ======================================================= */
+  .dark {
+    /* Core Colors (Negro) */
+    --color-background: #000000; /* Fondo Negro */
+    --color-foreground: #E5E7EB; /* Texto Gris Claro (Escala de grises) */
+    --color-border: #374151; /* Gris oscuro para bordes */
+    --color-input: #111827; /* Negro muy oscuro para inputs */
+    --color-ring: #00BFFF; /* Celeste Principal más brillante */
+
+    /* Card/Surface (Gris muy oscuro/Negro) */
+    --color-card: #111827; /* Negro muy oscuro para superficies */
+    --color-card-foreground: #E5E7EB; /* Texto Gris Claro */
+    --color-popover: #1F2937; /* Gris oscuro para popover */
+    --color-popover-foreground: #E5E7EB; /* Texto Gris Claro */
+    --color-surface: #111827; /* Negro muy oscuro */
+    --color-surface-foreground: #E5E7EB; /* Texto Gris Claro */
+    
+    /* Muted Colors (Escala de grises) */
+    --color-muted: #1F2937; /* Gris oscuro */
+    --color-muted-foreground: #9CA3AF; /* Gris claro/medio */
+    
+    /* Primary (Celeste más brillante) */
+    --color-primary: #00BFFF; /* Celeste Principal más brillante */
+    --color-primary-foreground: #111827; /* Texto Negro para alto contraste */
+    
+    /* Secondary (Dorado) */
+    --color-secondary: #FFD700; /* Dorado Secundario */
+    --color-secondary-foreground: #111827; /* Texto Negro para alto contraste */
+    
+    /* Accent (Mantenemos el Teal, pero un poco más oscuro) */
+    --color-accent: #14B8A6; /* Teal más claro para dark mode */
+    --color-accent-foreground: #111827; /* Texto Negro */
+    
+    /* Status Colors */
+    --color-success: #10B981; /* Verde */
+    --color-success-foreground: #111827;
+    --color-warning: #F59E0B; /* Ámbar */
+    --color-warning-foreground: #111827;
+    --color-error: #EF4444; /* Rojo */
+    --color-error-foreground: #111827;
+    --color-destructive: #EF4444; /* Rojo */
+    --color-destructive-foreground: #111827;
+    
+    /* Brand Specific (Celeste) */
+    --color-brand-indigo: #00BFFF; /* Celeste Principal */
+    --color-brand-indigo-foreground: #111827;
+    
+    /* Text Hierarchy (Escala de grises para el texto) */
+    --color-text-primary: #E5E7EB; /* Gris muy claro */
+    --color-text-secondary: #9CA3AF; /* Gris claro/medio */
+  }
+
+  /* ... el resto del código es el mismo ... */
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    letter-spacing: 0.02em;
+    line-height: 1.6;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+  
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer components {
+  /* NOTA: Estos gradientes y sombras son fijos y deberían ser ajustados.
+     Por ahora, los dejo, pero en dark mode el 'gradient-primary'
+     debería usar tonos de celeste/negro si fuera dinámico. */
+  .gradient-primary {
+    background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 50%, #60A5FA 100%);
+  }
+  
+  .shadow-brand {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+  /* ... resto de componentes ... */
+  
+  .shadow-brand-hover {
+    box-shadow: 0 4px 20px rgba(30, 64, 175, 0.15);
+  }
+  
+  .shadow-brand-active {
+    box-shadow: 0 8px 40px rgba(30, 64, 175, 0.25);
+  }
+  
+  .transition-brand {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .animate-pulse-subtle {
+    animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes pulse-subtle {
+    0%, 100% {
+      opacity: 0.7;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  
+  .animate-slide-up {
+    animation: slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-scale-in {
+    animation: scale-in 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .grid-auto-fit {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+  
+  .min-touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

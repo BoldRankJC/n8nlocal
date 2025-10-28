@@ -1,0 +1,144 @@
+import React, { useState, useEffect, useRef } from 'react';
+import Icon from '../../../components/AppIcon';
+import Button from '../../../components/ui/Button';
+
+const MessageModal = ({ isOpen, onClose, request, formId }) => {
+  const [message, setMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [user, setUser] = useState(sessionStorage.getItem("user"));
+  const [messages, setMessages] = useState([]);
+  const chatRef = useRef(null);
+
+  const id = formId || request?._id;
+
+  // 🔁 Fetch de mensajes
+  const fetchMessages = async () => {
+    if (!id) return;
+    try {
+      const res = await fetch(`https://accionaapi.vercel.app/api/respuestas/${id}/chat`);
+      if (!res.ok) throw new Error("Error al obtener chat");
+      const data = await res.json();
+      setMessages(data || []);
+    } catch (err) {
+      console.error("Error cargando mensajes:", err);
+    }
+  };
+
+
+
+  useEffect(() => {
+    if (!isOpen || !id) return;
+
+    fetchMessages(); // fetch inicial
+    const interval = setInterval(fetchMessages, 3000);
+    return () => clearInterval(interval);
+  }, [isOpen, id]);
+
+  // ⬇️ Auto-scroll
+  useEffect(() => {
+    if (chatRef.current) {
+      chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  // Enviar mensaje
+  const handleSend = async () => {
+    if (!message.trim() || !id) return;
+    setIsSending(true);
+
+    try {
+      const autor = sessionStorage.getItem("user") || "Anónimo";
+      const res = await fetch("https://accionaapi.vercel.app/api/respuestas/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ formId: id, autor, mensaje: message.trim() }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data?.data) {
+        setMessages(prev => [...prev, data.data]);
+        setMessage('');
+      } else {
+        console.error("Error enviando mensaje:", data.error || data);
+      }
+    } catch (err) {
+      console.error("Error enviando mensaje:", err);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const formatMessageTime = (timestamp) =>
+    new Date(timestamp).toLocaleString('es-CL', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+  if (!isOpen || !request) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-card border border-border rounded-lg shadow-lg w-full max-w-2xl max-h-[80vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-border">
+          <div className="flex items-center space-x-3">
+            <Icon name="MessageSquare" size={24} className="text-accent" />
+            <div>
+              <h2 className="text-xl font-semibold text-foreground">Mensajes</h2>
+              <p className="text-sm text-muted-foreground">{request?.title}</p>
+            </div>
+          </div>
+          <Button variant="ghost" size="icon" onClick={onClose} iconName="X" iconSize={20} />
+        </div>
+
+        {/* Chat */}
+        <div ref={chatRef} className="flex-1 overflow-y-auto p-6 space-y-4">
+          {messages.length > 0 ? messages.map((msg, i) => (
+            <div key={i} className={`flex ${msg.autor === user ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[85%] rounded-lg px-3 py-2 ${msg.autor === user ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+
+                {msg.autor !== user && (
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">{msg.autor}</span>
+                  </div>
+                )}
+
+                <p className="text-sm mb-2">{msg.mensaje}</p>
+                <span className="text-xs opacity-75">{formatMessageTime(msg.fecha)}</span>
+              </div>
+            </div>
+
+          )) : <p className="text-center text-muted-foreground">Sin mensajes aún.</p>}
+        </div>
+
+        {/* Input */}
+        <div className="p-6 border-t border-border">
+          <div className="flex items-center space-x-2">
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Escribe tu mensaje aquí..."
+              className="w-full min-h-[60px] p-3 border border-border rounded-lg resize-none bg-input text-foreground focus:ring-2 focus:ring-ring"
+              disabled={isSending}
+            />
+            <Button
+              variant="default"
+              onClick={handleSend}
+              disabled={!message.trim() || isSending}
+              loading={isSending}
+              iconName="Send"
+              iconPosition="left"
+              iconSize={16}
+            >
+              Enviar
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default MessageModal;
