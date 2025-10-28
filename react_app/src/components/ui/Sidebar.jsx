@@ -84,15 +84,7 @@ const Sidebar = ({ isCollapsed = false, onToggleCollapse, className = '' }) => {
 
   return (
     <aside className={`fixed left-0 top-16 bottom-0 z-40 bg-card border-r border-border transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-64'} ${className}`}>
-      <div className="flex flex-col h-full">
-
-        {/* Header */}
-        {!isCollapsed && (
-          <div className="p-4 border-b border-border">
-            <h2 className="text-sm font-semibold text-foreground">Navegación</h2>
-            <p className="text-xs text-muted-foreground">Acceso a herramientas</p>
-          </div>
-        )}
+      <div className=" my-5 flex flex-col h-full">
 
         {/* Main navigation */}
         <nav className="flex-1 p-4 space-y-2">
