@@ -9,6 +9,7 @@ import Login from './pages/login/Index.jsx';
 import SupportPortal from './pages/support-portal/Index.jsx';
 import DashboardHome from './pages/dashboard-home/Index.jsx';
 import RequestTracking from './pages/request-tracking/Index.jsx';
+import Chatbot from './pages/chatbot/Index.jsx';
 import Users from './pages/users/Index.jsx';
 import SetPassword from './pages/users/components/SetPassword.jsx'; 
 
@@ -25,6 +26,7 @@ const Routes = () => {
           <Route path="/support-portal" element={ <SupportPortal />}/>
 
           <Route path="/users" element={<ProtectedRoute> <Users /> </ProtectedRoute>}/>
+          <Route path="/chatbot" element={<ProtectedRoute> <Chatbot /> </ProtectedRoute>}/>
           <Route path="/" element={<ProtectedRoute> <DashboardHome /> </ProtectedRoute>}/>
           <Route path="/request-tracking" element={<ProtectedRoute> <RequestTracking /> </ProtectedRoute>}/>
 

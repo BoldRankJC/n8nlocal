@@ -7,112 +7,109 @@
 @import 'docx-preview/dist/docx-preview.css';
 
 @layer base {
-  /* ======================================================= */
-  /* TEMA CLARO (Celeste Principal / Blanco)   */
-  /* ======================================================= */
+  
   :root {
-    /* Core Colors (Blanco/Claro) */
-    --color-background: #FFFFFF; /* Blanco */
-    --color-foreground: #1E293B; /* Texto Negro/Gris Oscuro */
-    --color-border: #E5E7EB; /* Gris Claro (Border) */
-    --color-input: #FFFFFF; /* Blanco */
-    --color-ring: #00AEEF; /* Celeste Principal */
+    /* Core Colors (Grises/Claros como fallback, pero se debe usar .dark) */
+    --color-background: #0D0D0D; /* Fondo Gris Oscuro/Negro */
+    --color-foreground: #F3F4F6; /* Texto Gris Claro */
+    --color-border: #333333; /* Gris Oscuro (Border) */
+    --color-input: #1C1C1C; /* Negro muy oscuro para inputs */
+    --color-ring: #00BFFF; /* Celeste Principal */
     
-    /* Card/Surface (Blanco/Claro) */
-    --color-card: #FFFFFF; /* Blanco */
-    --color-card-foreground: #1E293B; /* Texto Negro/Gris Oscuro */
-    --color-popover: #FFFFFF; /* Blanco */
-    --color-popover-foreground: #1E293B; /* Texto Negro/Gris Oscuro */
-    --color-surface: #FFFFFF; /* Blanco */
-    --color-surface-foreground: #1E293B; /* Texto Negro/Gris Oscuro */
+    /* Card/Surface */
+    --color-card: #1C1C1C; /* Negro muy oscuro para superficies */
+    --color-card-foreground: #F3F4F6; /* Texto Gris Claro */
+    --color-popover: #1C1C1C; /* Negro muy oscuro para popover */
+    --color-popover-foreground: #F3F4F6; /* Texto Gris Claro */
+    --color-surface: #1C1C1C; /* Negro muy oscuro */
+    --color-surface-foreground: #F3F4F6; /* Texto Gris Claro */
     
-    /* Muted Colors (Grises claros) */
-    --color-muted: #F3F4F6; /* Gris muy claro */
-    --color-muted-foreground: #6B7280; /* Gris medio */
+    /* Muted Colors */
+    --color-muted: #282828; /* Gris oscuro para hover/muted */
+    --color-muted-foreground: #A0A0A0; /* Gris medio para texto secundario */
     
     /* Primary (Celeste) */
-    --color-primary: #00AEEF; /* Celeste Principal */
-    --color-primary-foreground: #FFFFFF; /* Blanco */
+    --color-primary: #00BFFF; /* Celeste Brillante */
+    --color-primary-foreground: #1C1C1C; /* Texto Negro para contraste */
     
-    /* Secondary (Dorado) */
-    --color-secondary: #FFD700; /* Dorado Secundario */
-    --color-secondary-foreground: #1E293B; /* Texto Negro */
+    /* Secondary (Dorado - Detalle) */
+    --color-secondary: #FFD700; /* Dorado Estándar */
+    --color-secondary-foreground: #1C1C1C; /* Texto Negro para contraste */
     
-    /* Accent (Mantenemos un color vibrante) */
-    --color-accent: #0D9488; /* Teal */
-    --color-accent-foreground: #FFFFFF; /* Blanco */
-    
-    /* Status Colors */
-    --color-success: #059669; /* Verde */
-    --color-success-foreground: #FFFFFF;
-    --color-warning: #ffae00; /* Ámbar */
-    --color-warning-foreground: #FFFFFF;
-    --color-error: #DC2626; /* Rojo */
-    --color-error-foreground: #FFFFFF;
-    --color-destructive: #DC2626; /* Rojo */
-    --color-destructive-foreground: #FFFFFF;
-    
-    /* Brand Specific (Puedes ajustarlo a Celeste) */
-    --color-brand-indigo: #00AEEF; /* Celeste Principal */
-    --color-brand-indigo-foreground: #FFFFFF; 
-    
-    /* Text Hierarchy (Negro/Grises) */
-    --color-text-primary: #1E293B; /* Negro/Gris Oscuro */
-    --color-text-secondary: #6B7280; /* Gris medio */
-  }
-
-  /* ======================================================= */
-  /* TEMA OSCURO (.dark)                       */
-  /* ======================================================= */
-  .dark {
-    /* Core Colors (Negro) */
-    --color-background: #000000; /* Fondo Negro */
-    --color-foreground: #E5E7EB; /* Texto Gris Claro (Escala de grises) */
-    --color-border: #374151; /* Gris oscuro para bordes */
-    --color-input: #111827; /* Negro muy oscuro para inputs */
-    --color-ring: #00BFFF; /* Celeste Principal más brillante */
-
-    /* Card/Surface (Gris muy oscuro/Negro) */
-    --color-card: #111827; /* Negro muy oscuro para superficies */
-    --color-card-foreground: #E5E7EB; /* Texto Gris Claro */
-    --color-popover: #1F2937; /* Gris oscuro para popover */
-    --color-popover-foreground: #E5E7EB; /* Texto Gris Claro */
-    --color-surface: #111827; /* Negro muy oscuro */
-    --color-surface-foreground: #E5E7EB; /* Texto Gris Claro */
-    
-    /* Muted Colors (Escala de grises) */
-    --color-muted: #1F2937; /* Gris oscuro */
-    --color-muted-foreground: #9CA3AF; /* Gris claro/medio */
-    
-    /* Primary (Celeste más brillante) */
-    --color-primary: #00BFFF; /* Celeste Principal más brillante */
-    --color-primary-foreground: #111827; /* Texto Negro para alto contraste */
-    
-    /* Secondary (Dorado) */
-    --color-secondary: #FFD700; /* Dorado Secundario */
-    --color-secondary-foreground: #111827; /* Texto Negro para alto contraste */
-    
-    /* Accent (Mantenemos el Teal, pero un poco más oscuro) */
-    --color-accent: #14B8A6; /* Teal más claro para dark mode */
-    --color-accent-foreground: #111827; /* Texto Negro */
+    /* Accent (Puede ser una variación de celeste o dorado, usamos celeste para consistencia) */
+    --color-accent: #00BFFF; /* Celeste */
+    --color-accent-foreground: #1C1C1C; /* Texto Negro */
     
     /* Status Colors */
     --color-success: #10B981; /* Verde */
-    --color-success-foreground: #111827;
+    --color-success-foreground: #1C1C1C;
     --color-warning: #F59E0B; /* Ámbar */
-    --color-warning-foreground: #111827;
+    --color-warning-foreground: #1C1C1C;
     --color-error: #EF4444; /* Rojo */
-    --color-error-foreground: #111827;
+    --color-error-foreground: #1C1C1C;
     --color-destructive: #EF4444; /* Rojo */
-    --color-destructive-foreground: #111827;
+    --color-destructive-foreground: #1C1C1C;
     
     /* Brand Specific (Celeste) */
     --color-brand-indigo: #00BFFF; /* Celeste Principal */
-    --color-brand-indigo-foreground: #111827;
+    --color-brand-indigo-foreground: #1C1C1C;
     
-    /* Text Hierarchy (Escala de grises para el texto) */
-    --color-text-primary: #E5E7EB; /* Gris muy claro */
-    --color-text-secondary: #9CA3AF; /* Gris claro/medio */
+    /* Text Hierarchy */
+    --color-text-primary: #F3F4F6; /* Gris muy claro */
+    --color-text-secondary: #A0A0A0; /* Gris claro/medio */
+  }
+
+  /* ======================================================= */
+  /* TEMA OSCURO (.dark) - Mismo estilo que el 'light' para forzar la paleta */
+  /* ======================================================= */
+  .dark {
+    --color-background: #0D0D0D; /* Fondo Negro */
+    --color-foreground: #F3F4F6; /* Texto Gris Claro */
+    --color-border: #333333; /* Gris oscuro para bordes */
+    --color-input: #1C1C1C; /* Negro muy oscuro para inputs */
+    --color-ring: #00BFFF; /* Celeste Principal */
+
+    /* Card/Surface */
+    --color-card: #1C1C1C; /* Negro muy oscuro para superficies */
+    --color-card-foreground: #F3F4F6; /* Texto Gris Claro */
+    --color-popover: #1C1C1C; /* Negro muy oscuro para popover */
+    --color-popover-foreground: #F3F4F6; /* Texto Gris Claro */
+    --color-surface: #1C1C1C; /* Negro muy oscuro */
+    --color-surface-foreground: #F3F4F6; /* Texto Gris Claro */
+    
+    /* Muted Colors */
+    --color-muted: #282828; /* Gris oscuro para hover/muted */
+    --color-muted-foreground: #A0A0A0; /* Gris medio para texto secundario */
+    
+    /* Primary (Celeste) */
+    --color-primary: #00BFFF; /* Celeste Brillante */
+    --color-primary-foreground: #1C1C1C; /* Texto Negro para contraste */
+    
+    /* Secondary (Dorado - Detalle) */
+    --color-secondary: #FFD700; /* Dorado Estándar */
+    --color-secondary-foreground: #1C1C1C; /* Texto Negro para contraste */
+    
+    /* Accent (Celeste) */
+    --color-accent: #00BFFF; /* Celeste */
+    --color-accent-foreground: #1C1C1C; /* Texto Negro */
+    
+    /* Status Colors */
+    --color-success: #10B981; /* Verde */
+    --color-success-foreground: #1C1C1C;
+    --color-warning: #F59E0B; /* Ámbar */
+    --color-warning-foreground: #1C1C1C;
+    --color-error: #EF4444; /* Rojo */
+    --color-error-foreground: #1C1C1C;
+    --color-destructive: #EF4444; /* Rojo */
+    --color-destructive-foreground: #1C1C1C;
+    
+    /* Brand Specific (Celeste) */
+    --color-brand-indigo: #00BFFF; /* Celeste Principal */
+    --color-brand-indigo-foreground: #1C1C1C;
+    
+    /* Text Hierarchy */
+    --color-text-primary: #F3F4F6; /* Gris muy claro */
+    --color-text-secondary: #A0A0A0; /* Gris claro/medio */
   }
 
   /* ... el resto del código es el mismo ... */
@@ -141,24 +138,23 @@
 }
 
 @layer components {
-  /* NOTA: Estos gradientes y sombras son fijos y deberían ser ajustados.
-     Por ahora, los dejo, pero en dark mode el 'gradient-primary'
-     debería usar tonos de celeste/negro si fuera dinámico. */
+  /* Nuevo gradiente Celeste/Negro */
   .gradient-primary {
-    background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 50%, #60A5FA 100%);
+    background: linear-gradient(135deg, #00BFFF 0%, #008DBC 50%, #1C1C1C 100%);
   }
   
   .shadow-brand {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+    /* Sombra más sutil y dorada/celeste */
+    box-shadow: 0 1px 3px rgba(0, 191, 255, 0.1), 0 1px 2px rgba(255, 215, 0, 0.06);
   }
   /* ... resto de componentes ... */
   
   .shadow-brand-hover {
-    box-shadow: 0 4px 20px rgba(30, 64, 175, 0.15);
+    box-shadow: 0 4px 20px rgba(0, 191, 255, 0.15); /* Sombra celeste */
   }
   
   .shadow-brand-active {
-    box-shadow: 0 8px 40px rgba(30, 64, 175, 0.25);
+    box-shadow: 0 8px 40px rgba(0, 191, 255, 0.25); /* Sombra celeste más fuerte */
   }
   
   .transition-brand {

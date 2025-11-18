@@ -131,12 +131,12 @@ const FormReg = () => {
           subject: "Completa tu registro en la plataforma",
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #3B82F6;">¡Bienvenido a la plataforma!</h2>
+              <h2 style="color: #00BFFF;">¡Bienvenido a la plataforma!</h2>
               <p>Hola <strong>${formData.nombre} ${formData.apellido}</strong>,</p>
               <p>Has sido registrado en nuestra plataforma. Para completar tu registro y establecer tu contraseña, haz clic en el siguiente botón:</p>
               <div style="text-align: center; margin: 30px 0;">
                 <a href="https://infoBoosted.vercel.app/set-password?userId=${savedUser?.id || savedUser?._id}" 
-                   style="background-color: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                   style="background-color: #00BFFF; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
                   Establecer Contraseña
                 </a>
               </div>
@@ -201,55 +201,63 @@ const FormReg = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <Sidebar />
-      <main className="ml-64 pt-16">
+      {/* AJUSTE CLAVE 1: ml-56 para el sidebar compacto */}
+      <main className="ml-56 pt-16 transition-all duration-300">
         <div className="p-6 space-y-6">
-          <div className="bg-card border border-border rounded-lg">
+          {/* Contenedor del Formulario de Registro */}
+          <div className="bg-card border border-border rounded-lg shadow-brand">
             <div className="p-6">{getTabContent()}</div>
           </div>
 
-          <div className="bg-card border border-border rounded-lg mt-8 p-6">
-            <h2 className="text-xl font-semibold mb-4">Usuarios registrados</h2>
+          {/* Tabla de Usuarios Registrados */}
+          <div className="bg-card border border-border rounded-lg mt-8 p-6 shadow-brand">
+            {/* Título en Dorado (Secondary) para acento */}
+            <h2 className="text-xl font-semibold mb-4 text-secondary">Usuarios registrados</h2>
 
             {users.length === 0 ? (
               <p className="text-muted-foreground">No hay usuarios registrados.</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="min-w-full border border-border rounded-lg">
+                {/* Estilo de tabla minimalista: sin bordes fuertes en celdas, solo filas sutiles */}
+                <table className="min-w-full">
+                  {/* Encabezado: Fondo sutil gris oscuro (muted) y texto gris claro (muted-foreground) */}
                   <thead className="bg-muted text-sm text-muted-foreground">
                     <tr>
-                      <th className="px-4 py-2 text-left">ID</th>
-                      <th className="px-4 py-2 text-left">Nombre</th>
-                      <th className="px-4 py-2 text-left">Empresa</th>
-                      <th className="px-4 py-2 text-left">Email</th>
-                      <th className="px-4 py-2 text-left">Cargo</th>
-                      <th className="px-4 py-2 text-left">Rol</th>
-                      <th className="px-4 py-2 text-left">Estado</th>
-                      <th className="px-4 py-2 text-left">Creado</th>
+                      <th className="px-4 py-3 text-left font-medium">ID</th>
+                      <th className="px-4 py-3 text-left font-medium">Nombre</th>
+                      <th className="px-4 py-3 text-left font-medium">Empresa</th>
+                      <th className="px-4 py-3 text-left font-medium">Email</th>
+                      <th className="px-4 py-3 text-left font-medium">Cargo</th>
+                      <th className="px-4 py-3 text-left font-medium">Rol</th>
+                      <th className="px-4 py-3 text-left font-medium">Estado</th>
+                      <th className="px-4 py-3 text-left font-medium">Creado</th>
                     </tr>
                   </thead>
                   <tbody>
                     {users.map((u) => (
-                      <tr key={u.id} className="border-t hover:bg-muted/30 transition">
-                        <td className="px-4 py-2">{u._id}</td>
-                        <td className="px-4 py-2">{u.nombre || '—'}</td>
-                        <td className="px-4 py-2">{u.empresa || '—'}</td>
-                        <td className="px-4 py-2">{u.mail || '—'}</td>
-                        <td className="px-4 py-2">{u.cargo || '—'}</td>
-                        <td className="px-4 py-2">{u.rol || '—'}</td>
-                        <td className="px-4 py-2">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
+                      <tr key={u.id} className="border-t border-border hover:bg-muted/30 transition text-sm text-foreground">
+                        {/* Datos de la fila */}
+                        <td className="px-4 py-3 text-xs text-muted-foreground font-mono">{u._id}</td> {/* ID en mono y sutil */}
+                        <td className="px-4 py-3">{u.nombre || '—'}</td>
+                        <td className="px-4 py-3">{u.empresa || '—'}</td>
+                        <td className="px-4 py-3 text-primary">{u.mail || '—'}</td> {/* Email en Celeste para destacar */}
+                        <td className="px-4 py-3">{u.cargo || '—'}</td>
+                        <td className="px-4 py-3">{u.rol || '—'}</td>
+                        <td className="px-4 py-3">
+                          {/* AJUSTE CLAVE 2: Colores de estado para modo oscuro */}
+                          <span className={`px-2 py-1 text-xs rounded-full font-semibold ${
                             u.estado === 'pendiente' 
-                              ? 'bg-yellow-100 text-yellow-800' 
+                              ? 'bg-warning/20 text-warning' // Amarillo/Ámbar sutil
                               : u.estado === 'activo'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
+                              ? 'bg-success/20 text-success' // Verde sutil
+                              : 'bg-muted/50 text-muted-foreground' // Gris sutil
                           }`}>
                             {u.estado === 'pendiente' ? 'Pendiente' : 
                              u.estado === 'activo' ? 'Activo' : 
                              'Inactivo'}
                           </span>
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-3 text-muted-foreground text-xs">
                           {u.createdAt
                             ? new Date(u.createdAt).toLocaleDateString()
                             : '—'}

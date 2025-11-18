@@ -78,11 +78,7 @@ const ChatbotHome = () => {
 
   // Componente para renderizar el contenido del chat (mensajes)
   const ChatContent = () => (
-    // AJUSTE CLAVE 1: padding-top para el área de saludo, y padding-bottom grande para la barra de entrada
     <div className="flex-grow overflow-y-auto pt-24 pb-32 px-8 space-y-4"> 
-        {/* Espacio superior vacío tipo Gemini/ChatGPT (reducido ya que el pt-24 del contenedor lo maneja) */}
-        {/* Los mensajes ahora empiezan después del área invisible del header */}
-        
         {messages.map(msg => (
             <div 
                 key={msg.id} 
@@ -118,27 +114,29 @@ const ChatbotHome = () => {
 
   // Componente para la barra de entrada de chat
   const ChatInput = () => (
-    // Contenedor principal: Fixed, ancho completo, se ajusta al sidebar
-    <div className={`fixed bottom-0 right-0 z-20 bg-card border-t border-border p-6 shadow-2xl dark:shadow-black/70 transition-all duration-300 ${
-        sidebarCollapsed ? 'left-16' : 'left-64' 
+    <div className={`fixed bottom-0 left-0 right-0 z-20 bg-card border-t border-border p-6 shadow-2xl dark:shadow-black/70 transition-all duration-300 ${
+        sidebarCollapsed ? 'pl-20' : 'pl-60' // <-- AJUSTE: El padding izquierdo (pl-) simula el margen para desplazar el contenido de la barra, sincronizándose con la transición. (16 = p-4 + ml-16. 56 = p-4 + ml-56. 
+                                              // Usamos pl-20 (5rem) y pl-60 (15rem) que son valores de Tailwind cercanos a 4*16=64 y 4*56=224, para dar el espacio del sidebar + el padding.
+                                              // 16px (pl-4) + 64px (sidebar) = 80px (pl-20)
+                                              // 16px (pl-4) + 224px (sidebar) = 240px (pl-60)
     }`}>
         {/* Contenedor centralizado para la barra de texto */}
         <div className="max-w-4xl mx-auto">
             {/* Contenedor principal de la barra de entrada: Borde, redondeo y fondo */}
-            <form onSubmit={handleSendMessage} className="bg-background border border-border rounded-2xl p-2 flex items-end">
+            <form onSubmit={handleSendMessage} className="bg-card border border-border rounded-2xl p-2 flex items-end"> 
                 
-                {/* 1. Botón de Agregar (Izquierda) */}
+                {/* 1. Botón de Agregar (Izquierda) - Dorado */}
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="flex-shrink-0 w-10 h-10 text-muted-foreground hover:bg-muted"
-                    iconName="Plus" // Icono de añadir (+)
-                    type="button" // Para evitar que envíe el formulario
+                    className="flex-shrink-0 w-10 h-10 text-secondary hover:bg-muted" 
+                    iconName="Plus" 
+                    type="button" 
                 />
 
                 {/* 2. Área de Texto (Flex-grow) */}
                 <textarea
-                    rows={1} // Altura inicial de 1 fila
+                    rows={1} 
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -147,20 +145,18 @@ const ChatbotHome = () => {
                         }
                     }}
                     placeholder="Escribe tu mensaje..."
-                    // Clases que aseguran que el textarea ocupe el espacio y tenga el estilo correcto
                     className="flex-grow resize-none overflow-y-hidden bg-transparent border-none text-foreground text-base focus:ring-0 focus:outline-none placeholder:text-muted-foreground p-2"
                     disabled={isSending}
                 />
                 
-                {/* 3. Botón de Enviar (Derecha, Redondo y Oscuro) */}
+                {/* 3. Botón de Enviar (Derecha, Redondo y Celeste) */}
                 <Button
                     type="submit"
-                    size="icon" // Para que sea cuadrado (y por el rounded-full, redondo)
+                    size="icon" 
                     loading={isSending}
                     iconName="Send"
-                    // Estilo del botón (fondo oscuro, borde redondeado completo)
                     className="flex-shrink-0 w-10 h-10 bg-primary text-primary-foreground rounded-full hover:opacity-80 transition-opacity ml-2"
-                    disabled={!input.trim()} // Deshabilitar si no hay texto
+                    disabled={!input.trim()} 
                 />
             </form>
             
@@ -181,20 +177,17 @@ const ChatbotHome = () => {
       
       {/* Contenedor Principal (Flex-grow y padding para el Header) */}
       <div className={`flex flex-col flex-grow transition-all duration-300 ${
-        sidebarCollapsed ? 'ml-16' : 'ml-64'
+        sidebarCollapsed ? 'ml-16' : 'ml-56'
       }`}>
         {/* Header (Fijo en la parte superior) */}
         <Header /> 
         
         {/* Main Content (Área de chat) */}
-        {/* AJUSTE CLAVE 2: Aplicamos pt-20 para compensar el Header fijo */}
         <main className="flex flex-col flex-grow relative overflow-hidden pt-20"> 
             <ChatContent />
-            {/* NO se pone ChatInput aquí. Se añade al final del return */}
         </main>
       </div>
 
-      {/* Barra de entrada: Fuera de todo para que sea Fixed */}
       <ChatInput /> 
 
     </div>
