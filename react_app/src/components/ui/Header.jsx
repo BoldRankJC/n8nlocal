@@ -1,274 +1,250 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Icon from '../AppIcon';
 import Button from './Button';
-import NotificationsCard from './NotificationsCard';
+import Input from './Input';
 
-const Header = ({ className = '' }) => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isUserOpen, setIsUserOpen] = useState(false);
-  const user = sessionStorage.getItem("user");
-  const cargo = sessionStorage.getItem("cargo");
-  const [unreadCount, setUnreadCount] = useState(0);
+const SearchOverlay = ({ isOpen, onClose, onSearch }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const inputRef = useRef(null);
 
-  // 🌙 Lógica del modo oscuro
-  // Inicializa el estado 'theme' leyendo localStorage o usando el valor por defecto ('dark' para la nueva estética)
-  const [theme, setTheme] = useState(
-    localStorage.getItem('theme') || 'dark' // <-- CAMBIO A DEFAULT 'dark'
-  );
-
-  // Refs para detectar clics fuera
-  const menuRef = useRef(null);
-  const notiRef = useRef(null);
-  const userMenuRef = useRef(null);
-  const userMail = sessionStorage.getItem("email");
-
-  const navigationItems = [
-    { name: 'Incio', path: '/', icon: 'Home' },
-    { name: 'Settings', path: '/settings', icon: 'Settings' },
-    { name: 'Help', path: '/help', icon: 'HelpCircle' },
-  ];
-
-  const [isNotiOpen, setIsNotiOpen] = useState(false);
-
-  // 🌙 EFFECT: Aplica la clase 'dark' al <html> cuando 'theme' cambia
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
+    if (isOpen && inputRef?.current) {
+      inputRef?.current?.focus();
     }
-    // Guarda la preferencia en localStorage
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  // 🌙 FUNCIÓN: Alterna el modo claro/oscuro
-  const toggleTheme = () => {
-    setTheme(currentTheme => (currentTheme === 'light' ? 'dark' : 'light'));
-  };
-
-  // ... (El resto de la lógica de useEffect y funciones se mantiene igual) ...
+  }, [isOpen]);
 
   useEffect(() => {
-    const fetchUnreadCount = async () => {
-      const response = await fetch(`https://Boostedapi.vercel.app/api/noti/${userMail}/unread-count`);
-      const data = await response.json();
-      console.log("No leídas:", data.unreadCount);
-      setUnreadCount(data.unreadCount);
-    };
-
-    fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 10000); // cada 10 segundos
-    return () => clearInterval(interval);
-  }, [user]);
-
-  // Effect para detectar clics fuera de los menús
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      // Cerrar menú principal si se hace clic fuera
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setIsMenuOpen(false);
-      }
-
-      // Cerrar notificaciones si se hace clic fuera
-      if (notiRef.current && !notiRef.current.contains(event.target)) {
-        setIsNotiOpen(false);
-      }
-
-      // Cerrar menú de usuario si se hace clic fuera
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
-        setIsUserOpen(false);
+    const handleEscape = (event) => {
+      if (event?.key === 'Escape') {
+        onClose();
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
+    }
+
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
     };
-  }, []);
+  }, [isOpen, onClose]);
 
-  const toggleNoti = () => {
-    setIsNotiOpen(!isNotiOpen);
+  const handleSearch = async (query) => {
+    if (!query?.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    
+    // Simulate search API call
+    setTimeout(() => {
+      const mockResults = [
+        {
+          id: 1,
+          type: 'message',
+          content: `Message containing "${query}"`,
+          sender: 'John Doe',
+          timestamp: '2 hours ago',
+          conversation: 'Team Chat'
+        },
+        {
+          id: 2,
+          type: 'conversation',
+          name: `${query} Discussion`,
+          participants: 5,
+          lastMessage: '10 minutes ago'
+        },
+        {
+          id: 3,
+          type: 'user',
+          name: `${query} User`,
+          status: 'online',
+          email: `${query?.toLowerCase()}@example.com`
+        }
+      ];
+      
+      setSearchResults(mockResults);
+      setIsSearching(false);
+    }, 500);
   };
 
-  const handleNavigation = (path) => {
-    window.location.href = path;
-    setIsMenuOpen(false);
-    setIsUserOpen(false);
+  const handleInputChange = (e) => {
+    const value = e?.target?.value;
+    setSearchQuery(value);
+    handleSearch(value);
   };
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+  const handleResultClick = (result) => {
+    if (onSearch) {
+      onSearch(result);
+    }
+    onClose();
   };
 
-  const toggleUserMenu = () => {
-    setIsUserOpen(!isUserOpen);
+  const getResultIcon = (type) => {
+    switch (type) {
+      case 'message':
+        return 'MessageCircle';
+      case 'conversation':
+        return 'Users';
+      case 'user':
+        return 'User';
+      default:
+        return 'Search';
+    }
   };
 
-  const handleLogout = () => {
-    sessionStorage.clear();
-    window.location.href = '/';
-    setIsUserOpen(false);
-  };
+  if (!isOpen) return null;
 
-  // --------------------------------------------------------------------------------------------------
-  // JSX Modificado: Adaptación a la estética Negro/Celeste/Dorado
-  // --------------------------------------------------------------------------------------------------
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 bg-card border-b border-border shadow-brand ${className}`}>
-      <div className="flex items-center justify-between h-20 px-6">
-        {/* Logo Section */}
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary border border-secondary"> {/* Fondo Celeste, Borde Dorado */}
-            <Icon name="Building2" size={24} color="card-foreground" strokeWidth={2} /> {/* Icono en negro para alto contraste */}
+    <div className="fixed inset-0 z-300 bg-background/80 backdrop-blur-sm animate-scale-in">
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-border bg-card">
+          <div className="flex items-center space-x-3">
+            <Icon name="Search" size={24} className="text-primary" />
+            <h2 className="text-lg font-semibold text-foreground">Search Messages</h2>
           </div>
-          <div className="flex flex-col">
-            <h1 className="text-lg font-semibold text-foreground leading-tight">
-              Boosted HR Portal
-            </h1>
-            <span className="text-xs text-secondary font-mono"> {/* Subtítulo en Dorado */}
-              Employee Experience Platform
-            </span>
-          </div>
-        </div>
-
-        {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center space-x-1">
-          {navigationItems?.map((item) => (
-            <Button
-              key={item?.path}
-              variant="ghost"
-              size="sm"
-              onClick={() => handleNavigation(item?.path)}
-              iconName={item?.icon}
-              iconPosition="left"
-              iconSize={18}
-              className="px-4 py-2 text-md font-medium text-muted-foreground hover:text-primary hover:bg-muted transition-brand" // Hover a Celeste
-            >
-              {item?.name}
-            </Button>
-          ))}
-        </nav>
-
-        {/* User Profile & Actions */}
-        <div className="flex items-center space-x-3">
-
-          {/* 🌙 Botón de Modo Oscuro */}
           <Button
             variant="ghost"
             size="icon"
-            onClick={toggleTheme}
-            className="hover:bg-muted transition-brand hover:text-primary" // Hover a Celeste
-            iconName={theme === 'dark' ? "Sun" : "Moon"} // Cambia el ícono según el tema actual
-            title={theme === 'dark' ? "Modo Claro" : "Modo Oscuro"}
-          />
+            onClick={onClose}
+            className="hover:bg-accent/50"
+          >
+            <Icon name="X" size={20} />
+          </Button>
+        </div>
 
-          {/* Notifications */}
-          <div ref={notiRef}>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleNoti}
-              className="relative hover:bg-muted transition-brand hover:text-primary" // Hover a Celeste
-              iconName="Bell"
-            >
-              {
-                (unreadCount > 0) && ( // solo si hay sin leer
-                  <span className="absolute top-1 -right-1 w-2 h-2 bg-error rounded-full animate-pulse-subtle border border-card"></span>
-                )
-              }
-            </Button>
-
-            {isNotiOpen && (
-              <div className="absolute right-0 top-full mt-2 mr-2 bg-popover border border-border rounded-lg shadow-brand-hover animate-scale-in z-50"> {/* Z-index alto */}
-                <div className="py-2">
-                  <NotificationsCard user={user} onUnreadChange={setUnreadCount} />
-                </div>
-              </div>
-            )}
+        {/* Search Input */}
+        <div className="p-4 border-b border-border bg-card">
+          <div className="relative">
+            <Input
+              ref={inputRef}
+              type="search"
+              placeholder="Search messages, conversations, or users..."
+              value={searchQuery}
+              onChange={handleInputChange}
+              className="pl-10"
+            />
+            <Icon 
+              name="Search" 
+              size={18} 
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
+            />
           </div>
+        </div>
 
-          {/* User Profile */}
-          <div className="flex items-center space-x-3 pl-3 border-l border-border">
-            {user && (
-              <div className="hidden md:block text-right">
-                <p className="text-sm font-medium text-foreground">{user}</p>
-                <p className="text-xs text-muted-foreground">{cargo}</p>
+        {/* Search Results */}
+        <div className="flex-1 overflow-y-auto p-4">
+          {isSearching ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="flex items-center space-x-2 text-muted-foreground">
+                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <span>Searching...</span>
               </div>
-            )}
-
-            {/* User Avatar with Dropdown */}
-            <div className="relative" ref={userMenuRef}>
-              <button
-                onClick={toggleUserMenu}
-                className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center hover:opacity-90 transition-opacity cursor-pointer border-2 border-primary" // Fondo Dorado, Borde Celeste
-              >
-                {user ? (
-                  <span className="text-sm font-semibold text-card-foreground"> {/* Texto Negro */}
-                    {user.charAt(0).toUpperCase()}
-                  </span>
-                ) : (
-                  <Icon name="User" size={16} className="text-card-foreground" />
-                )}
-              </button>
-
-              {/* User Dropdown Menu - SOLO CERRAR SESIÓN */}
-              {isUserOpen && user && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-popover border border-border rounded-lg shadow-brand-hover animate-scale-in z-50">
-                  <div className="py-2">
-                    {/* Información del usuario */}
-                    <div className="px-4 py-2 border-b border-border">
-                      <p className="text-sm font-medium text-popover-foreground">{user}</p>
-                      <p className="text-xs text-primary">Sesión activa</p> {/* Texto de sesión en Celeste */}
+            </div>
+          ) : searchQuery && searchResults?.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Icon name="SearchX" size={48} className="text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No results found</h3>
+              <p className="text-muted-foreground">
+                Try adjusting your search terms or check for typos.
+              </p>
+            </div>
+          ) : searchResults?.length > 0 ? (
+            <div className="space-y-2">
+              <div className="text-sm text-muted-foreground mb-4">
+                {searchResults?.length} result{searchResults?.length !== 1 ? 's' : ''} found
+              </div>
+              {searchResults?.map((result) => (
+                <button
+                  key={result?.id}
+                  onClick={() => handleResultClick(result)}
+                  className="w-full p-3 bg-card hover:bg-accent/50 rounded-lg border border-border transition-colors duration-200 text-left"
+                >
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
+                      <Icon name={getResultIcon(result?.type)} size={16} />
                     </div>
-
-                    {/* Solo opción de Cerrar Sesión */}
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center w-full px-4 py-2 text-sm text-popover-foreground hover:bg-muted transition-brand hover:text-primary" // Hover a Celeste
-                    >
-                      <Icon name="LogOut" size={16} className="mr-3 text-secondary" /> {/* Icono LogOut en Dorado */}
-                      Cerrar Sesión
-                    </button>
+                    <div className="flex-1 min-w-0">
+                      {result?.type === 'message' && (
+                        <>
+                          <div className="text-sm font-medium text-foreground truncate">
+                            {result?.sender} in {result?.conversation}
+                          </div>
+                          <div className="text-sm text-muted-foreground truncate">
+                            {result?.content}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {result?.timestamp}
+                          </div>
+                        </>
+                      )}
+                      {result?.type === 'conversation' && (
+                        <>
+                          <div className="text-sm font-medium text-foreground truncate">
+                            {result?.name}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {result?.participants} participants • Last message {result?.lastMessage}
+                          </div>
+                        </>
+                      )}
+                      {result?.type === 'user' && (
+                        <>
+                          <div className="text-sm font-medium text-foreground truncate">
+                            {result?.name}
+                          </div>
+                          <div className="text-sm text-muted-foreground truncate">
+                            {result?.email}
+                          </div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <div className={`w-2 h-2 rounded-full ${
+                              result?.status === 'online' ? 'bg-primary' : 'bg-muted-foreground'
+                            }`}></div>
+                            <span className="text-xs text-muted-foreground capitalize">
+                              {result?.status}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Icon name="Search" size={48} className="text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">Start searching</h3>
+              <p className="text-muted-foreground">
+                Enter keywords to search through messages, conversations, and users.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-border bg-card">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center space-x-4">
+              <span>Press <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Esc</kbd> to close</span>
+            </div>
+            <div>
+              {searchResults?.length > 0 && (
+                <span>{searchResults?.length} of {searchResults?.length} results</span>
               )}
             </div>
           </div>
-
-          {/* Mobile Menu Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleMenu}
-            className="lg:hidden hover:bg-muted transition-brand hover:text-primary" // Hover a Celeste
-          >
-            <Icon name={isMenuOpen ? "X" : "Menu"} size={20} />
-          </Button>
         </div>
       </div>
-
-      {/* Mobile Navigation Menu */}
-      {isMenuOpen && (
-        <div className="lg:hidden bg-card border-t border-border animate-slide-up">
-          <nav className="px-6 py-4 space-y-2">
-            {navigationItems?.map((item) => (
-              <button
-                key={item?.path}
-                onClick={() => handleNavigation(item?.path)}
-                className="flex items-center w-full px-4 py-3 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-muted rounded-lg transition-brand" // Hover a Celeste
-              >
-                <Icon name={item?.icon} size={18} className="mr-3" />
-                {item?.name}
-              </button>
-            ))}
-
-            {/* ... moreMenuItems (comentado) ... */}
-          </nav>
-        </div>
-      )}
-    </header>
+    </div>
   );
 };
 
-export default Header;
+export default SearchOverlay;

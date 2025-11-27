@@ -1,154 +1,85 @@
 import React from 'react';
-import Icon from '../AppIcon';
-import Button from './Button';
-import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Users, LifeBuoy, MessageSquareText, LogOut, Briefcase, Database, Home } from 'lucide-react';
 
-const Sidebar = ({ isCollapsed = false, onToggleCollapse, className = '' }) => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  
-  // 1. Estados para la navegación dinámica y el estado de carga
-  const [navigationItems, setNavigationItems] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  // Obtener datos del usuario (asumiendo que 'user' es un JSON string o similar)
-  const user = sessionStorage.getItem("user");
-  const mail = sessionStorage.getItem("email");
-  const token = sessionStorage.getItem("token");
-  const cargo = sessionStorage.getItem("cargo");
-
-  const handleNavigation = (path) => navigate(path);
-
-  // 2. useEffect para la llamada a la API
-  useEffect(() => {
-    // Si no tenemos los datos esenciales, no hacemos la llamada
-    if (!mail || !token || !cargo) {
-        console.error("Datos de usuario insuficientes para filtrar el menú.");
-        setIsLoading(false);
-        // Opcional: Redirigir al login si faltan credenciales críticas
-        // navigate('/login'); 
-        return;
-    }
-
-    const fetchMenu = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch(`https://Boostedapi.vercel.app/api/menu/filter`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            mail: mail,
-            token: token,
-            cargo: cargo, // Este es el campo clave para el filtro de la DB
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Error en la respuesta del servidor: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        // 3. Almacenar las secciones filtradas
-        setNavigationItems(data);
-      } catch (error) {
-        console.error("Fallo al obtener el menú filtrado:", error);
-        // Opcional: Mostrar un mensaje de error en la UI
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMenu();
-  }, [mail, token, cargo]); // Dependencias: se ejecuta cuando cambian las credenciales
-
-  if (isLoading) {
-    return (
-      <aside
-        className={`fixed left-0 top-16 bottom-0 z-40 bg-card border-r border-border flex items-center justify-center ${
-          isCollapsed ? "w-16" : "w-56"
-        } ${className}`}
-      >
-        <span className="text-muted-foreground text-sm">Cargando menú...</span>
-      </aside>
-    );
-  }
-
-  // Se reduce el ancho de 64 a 56 (w-56) para un aspecto más delgado
-  return (
-    <aside className={`fixed left-0 top-0 bottom-0 z-40 bg-card border-r border-border transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-56'} ${className} pt-20`}> 
-      <div className=" my-3 flex flex-col h-full"> {/* Reducción de margin y padding */}
-
-        {/* Main navigation */}
-        <nav className="flex-1 p-2 space-y-0.5"> {/* Reducción de padding y space-y */}
-          {!isCollapsed && <h3 className="text-xs font-semibold text-secondary uppercase tracking-wider"> Navegación</h3> }
-          {navigationItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <button
-                key={item.path}
-                onClick={() => handleNavigation(item.path)}
-                className={`w-full flex items-center rounded-lg transition-all duration-300 relative
-                  ${isActive 
-                    ? 'bg-muted/50 text-primary border border-border shadow-none' // Fondo Gris Oscuro/Transparente, Borde Gris Sutil
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50' // Hover más sutil
-                  }
-                  ${isCollapsed ? 'justify-center px-2 py-2.5' : 'justify-start px-3 py-2.5'} {/* Ajuste de padding vertical */}
-                `}
-                title={isCollapsed ? item.name : ''}
-              >
-                <Icon
-                  name={item.icon}
-                  size={isCollapsed ? 20 : 18} // Íconos más pequeños
-                  className={`${isActive ? 'text-primary' : 'text-muted-foreground'} ${!isCollapsed ? 'mr-3' : ''} transition-transform duration-300`} // Icono Celeste activo
-                />
-                {!isCollapsed && (
-                  <div className="flex-1 min-w-0 text-left"> 
-                    <div className="text-sm font-medium truncate text-foreground">{item.name}</div> {/* Se mantiene el tamaño de fuente para legibilidad */}
-                    {/* Se ELIMINA la descripción */}
-                  </div>
-                )}
-                {/* Indicador activo sutil - Línea delgada Celeste (Primary) */}
-                {!isCollapsed && isActive && <div className="w-1 h-2/3 bg-primary rounded-l-md absolute right-0 top-1/2 -translate-y-1/2"></div>}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* User Status */}
-        <div className="p-4 border-t border-border flex items-center justify-start"> {/* Alineación izquierda */}
-          <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center border-2 border-border"> {/* Avatar más pequeño */}
-            <Icon name="User" size={isCollapsed ? 20 : 16} color="card-foreground" /> {/* Icono en negro para contraste */}
-          </div>
-          {!isCollapsed && (
-            <div className="flex-1 min-w-0 ml-3">
-              <p className="text-sm font-medium text-foreground truncate">{user}</p>
-              <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-success rounded-full"></div> {/* Mantenemos el punto verde de "Online" */}
-                <span className="text-xs text-muted-foreground">Online</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Collapse Toggle */}
-        <div className="p-4 border-t border-border">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleCollapse} // <- se controla desde afuera
-            iconName={isCollapsed ? "ChevronRight" : "ChevronLeft"}
-            iconSize={16}
-            className={`w-full ${isCollapsed ? 'px-2' : 'px-3'} py-2 text-muted-foreground hover:text-primary hover:bg-muted/50 transition-all duration-300`} // Hover a Celeste
-          >
-            {!isCollapsed && 'Collapse'}
-          </Button>
-        </div>
-      </div>
-    </aside>
-  );
+const ViewState = {
+    HOME: '/',
+    LOGIN: '/login',
+    DASHBOARD: '/dashboard',
+    USERS: '/users',
+    SUPPORT: '/support',
+    CHATBOT: '/chatbot',
+    NOTIFICATIONS: '/notifications',
+    CRM: '/CRM',
+    ERP: '/ERP'
 };
+const Sidebar = ({ currentView, onChangeView, onLogout }) => {
+    const navigate = useNavigate();
 
+    const menuItems = [
+        { id: ViewState.HOME, label: 'Home', icon: Home },
+        { id: ViewState.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
+        { id: ViewState.USERS, label: 'Usuarios', icon: Users },
+        { id: ViewState.CHATBOT, label: 'Chatbot HR', icon: MessageSquareText },
+        { id: ViewState.CRM, label: 'CRM Boosted', icon: Briefcase },
+        { id: ViewState.ERP, label: 'ERP System', icon: Database },
+        { id: ViewState.SUPPORT, label: 'Soporte', icon: LifeBuoy },
+    ];
+
+    return (
+        <div className="h-full w-[280px] hidden md:flex flex-col p-6 z-20 shrink-0">
+            {/* Glass Container */}
+            <div className="h-full w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border border-white/60 dark:border-white/5 flex flex-col">
+
+                {/* Logo Area */}
+                <div className="h-24 flex items-center px-8">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-bold text-lg shadow-lg shadow-indigo-500/30">
+                            B
+                        </div>
+                        <span className="font-bold text-gray-900 dark:text-white text-2xl tracking-tight">Boosted</span>
+                    </div>
+                </div>
+
+                {/* Navigation */}
+                <div className="flex-1 px-4 py-4 space-y-2">
+                    <p className="px-4 text-[11px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-4">Menú Principal</p>
+                    {menuItems.map((item) => {
+                        const isActive = currentView === item.id;
+                        const Icon = item.icon;
+                        return (
+                            <button
+                                key={item.id}
+                                onClick={() => navigate(item.id)}
+                                className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden
+                    ${isActive
+                                        ? 'text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30'
+                                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-800/50 hover:text-gray-900 dark:hover:text-gray-200'
+                                    }`}
+                            >
+                                <Icon size={22} strokeWidth={isActive ? 2.5 : 2} className={`transition-transform group-hover:scale-110 duration-300 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500'}`} />
+                                <span className="relative z-10">{item.label}</span>
+                                {isActive && <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-600 dark:bg-indigo-400 rounded-l-full"></div>}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Logout Area */}
+                <div className="p-6">
+                    <button
+                        onClick={onLogout}
+                        className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-2xl text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-600 dark:hover:text-red-400 transition-all duration-300 font-medium group border border-transparent hover:border-red-100 dark:hover:border-red-900/20"
+                    >
+                        <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />
+                        <span>Cerrar Sesión</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 export default Sidebar;
+
+
+

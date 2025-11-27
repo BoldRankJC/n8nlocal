@@ -1,129 +1,154 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import Icon from '../../components/AppIcon';
-export default function LoginPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ArrowRight, AlertCircle } from 'lucide-react';
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+const Login = () => {
+    // --- Lógica de Navegación y Estado ---
+    const navigate = useNavigate();
+    const location = useLocation();
+    const from = location.state?.from?.pathname || "/";
 
-  const from = location.state?.from?.pathname || "/";
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
-  // Función para obtener el estado del tema (dark o light)
-  const isDarkMode = document.documentElement.classList.contains('dark');
+    // --- Manejo del Submit (API Real) ---
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError(""); // Limpiar errores previos
+        setIsLoading(true);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+        try {
+            const res = await fetch("https://Boostedapi.vercel.app/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+            });
 
-    try {
-      const res = await fetch("https://Boostedapi.vercel.app/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+            const data = await res.json();
 
-      const data = await res.json();
+            if (res.ok && data.success) {
+                // Guardar sesión
+                sessionStorage.setItem("cargo", data.usr.cargo);
+                sessionStorage.setItem("email", data.usr.email);
+                sessionStorage.setItem("user", data.usr.name);
+                sessionStorage.setItem("token", data.token);
 
-      if (res?.ok && data?.success) {
-        // Guardamos token en sessionStorage
-        setError(data.message || "error");
-        sessionStorage.setItem("cargo", data?.usr?.cargo);
-        sessionStorage.setItem("email", data?.usr?.email);
-        sessionStorage.setItem("user", data?.usr?.name);
-        sessionStorage.setItem("token", data?.token);
+                // Redirigir al usuario
+                navigate(from, { replace: true });
+            } else {
+                setError(data.message || "Credenciales incorrectas. Verifique e intente nuevamente.");
+                sessionStorage.clear();
+            }
+        } catch (err) {
+            console.error(err);
+            setError("No se pudo conectar con el servidor. Revise su conexión.");
+            sessionStorage.clear();
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-        navigate(from, { replace: true });
-      } else {
-        setError(data.message || "Error de login");
-        sessionStorage.clear();
-      }
-    } catch (err) {
-      console.error(err);
-      setError("Error de conexión con el servidor");
-      sessionStorage.clear();
-    }
-  };
+    return (
+        <div className="min-h-screen w-full flex items-center justify-center bg-[#f0f4f8] dark:bg-[#0f172a] relative overflow-hidden font-sans transition-colors duration-500">
+            
+            {/* 1. Decoraciones de Fondo Animadas */}
+            <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-300/30 dark:bg-indigo-900/20 rounded-full blur-[120px] animate-pulse pointer-events-none"></div>
+            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-300/30 dark:bg-purple-900/20 rounded-full blur-[120px] animate-pulse pointer-events-none" style={{ animationDelay: '2s' }}></div>
 
-  return (
-    // Contenedor principal: Fondo negro
-    <div className="flex items-center justify-center min-h-screen bg-background">
+            {/* 2. Contenedor Principal (Glassmorphism) */}
+            <div className="w-full max-w-[420px] relative z-10 p-6">
+                <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/50 dark:border-white/10 p-8 md:p-10 rounded-[2.5rem] shadow-[0_8px_40px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.4)] fade-in">
 
-      {/* Formulario: Más compacto, sombra difuminada y borde sutil */}
-      {/* Se mantiene  en el formulario para un toque elegante. */}
-      <form
-        onSubmit={handleSubmit}
-        className="bg-card p-10 shadow-xl shadow-black/50 border border-border/50 w-full max-w-xs transition-colors duration-300"
-      >
-        <div className="flex justify-center mb-6">
-          {/* Avatar Minimalista: Círculo Celeste, Borde sutil, Ícono Celeste */}
-          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/20 border-2 border-border/50 text-primary">
-            <Icon name="Bot" size={24} color="#fff" />
+                    {/* Header: Logo y Título */}
+                    <div className="text-center mb-10">
+                        <div className="w-14 h-14 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl mx-auto mb-6 shadow-lg shadow-indigo-500/30 rotate-3 hover:rotate-6 transition-transform duration-300 select-none">
+                            B
+                        </div>
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3 tracking-tight">Bienvenido</h1>
+                        <p className="text-gray-500 dark:text-gray-400 font-medium">Ingresa a tu portal corporativo</p>
+                    </div>
 
-          </div>
+                    {/* Formulario */}
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        
+                        {/* Mensaje de Error */}
+                        {error && (
+                            <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 px-4 py-3 rounded-xl text-sm flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+                                <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                                <span className="font-medium">{error}</span>
+                            </div>
+                        )}
+
+                        {/* Input Email */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider ml-2">Email Corporativo</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700/50 rounded-2xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200"
+                                placeholder="empleado@boosted.com"
+                                required
+                                disabled={isLoading}
+                            />
+                        </div>
+
+                        {/* Input Password */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider ml-2">Contraseña</label>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700/50 rounded-2xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all duration-200"
+                                placeholder="••••••••"
+                                required
+                                disabled={isLoading}
+                            />
+                        </div>
+
+                        {/* Opciones Extra */}
+                        <div className="flex items-center justify-between text-sm pt-2 px-1">
+                            <label className="flex items-center gap-2 cursor-pointer group">
+                                <div className="relative flex items-center">
+                                    <input type="checkbox" className="peer appearance-none w-5 h-5 border-2 border-gray-300 dark:border-slate-600 rounded-md checked:bg-indigo-600 checked:border-indigo-600 transition-colors" disabled={isLoading} />
+                                    <svg className="absolute w-3 h-3 text-white hidden peer-checked:block left-1 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                </div>
+                                <span className="text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">Recordarme</span>
+                            </label>
+                            <a href="#" className="text-indigo-600 dark:text-indigo-400 font-bold hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">¿Ayuda?</a>
+                        </div>
+
+                        {/* Botón de Acción */}
+                        <button
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold rounded-2xl shadow-[0_10px_25px_-5px_rgba(79,70,229,0.4)] hover:shadow-[0_15px_30px_-5px_rgba(79,70,229,0.5)] transition-all transform hover:-translate-y-0.5 active:scale-[0.98] flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    <span>Verificando...</span>
+                                </>
+                            ) : (
+                                <>
+                                    Iniciar Sesión
+                                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                </>
+                            )}
+                        </button>
+                    </form>
+
+                    {/* Footer */}
+                    <p className="text-center mt-8 text-xs text-gray-400 dark:text-slate-500 font-medium">
+                        © 2024 Boosted HR Platform • Acceso Seguro
+                    </p>
+                </div>
+            </div>
         </div>
+    );
+};
 
-        {/* Título: Peso más ligero */}
-        <h2 className="text-xl font-light mb-8 text-center text-foreground tracking-wider">
-          Portal de Ingreso
-        </h2>
-
-        {/* Mensaje de error: Box elegante */}
-        {error && <p className="text-error mb-4 p-2 text-sm bg-error/10 border border-error/50 rounded-lg">{error}</p>}
-
-        {/* Campo de Email */}
-        <div className="mb-6">
-          <label className="block mb-2 text-xs font-light text-muted-foreground uppercase">Email</label>
-          <input
-            type="email"
-            // AJUSTES CLAVE: 
-            // 1. Fondo negro sutil (bg-input) -> Evita el blanco.
-            // 2. Borde redondeado sutil ().
-            // 3. Focus: Borde Celeste y anillo Celeste (ring-primary)
-            className="w-full border border-border p-3  bg-input text-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors duration-200"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-
-        {/* Campo de Contraseña */}
-        <div className="mb-8">
-          <label className="block mb-2 text-xs font-light text-muted-foreground uppercase">Contraseña</label>
-          <input
-            type="password"
-            // AJUSTES CLAVE:
-            // 1. Fondo negro sutil (bg-input) -> Evita el blanco.
-            // 2. Borde redondeado sutil ().
-            // 3. Focus: Borde Celeste y anillo Celeste (ring-primary)
-            className="w-full border border-border p-3  bg-input text-foreground focus:border-primary focus:ring-1 focus:ring-primary transition-colors duration-200"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-
-        {/* Botón de Ingreso: Gradiente Celeste sutil */}
-        <button
-          type="submit"
-          className="w-full relative p-0.5  overflow-hidden transition-all duration-300 group shadow-lg shadow-primary/30" // Reducción de redondeo a 
-        >
-          {/* Gradiente de fondo al hacer hover (Dorado sutil) */}
-          <span className="absolute inset-0 bg-primary/80 group-hover:bg-gradient-to-r group-hover:from-primary/90 group-hover:to-secondary/60 transition-all duration-300 ease-in-out"></span>
-
-          {/* Contenido del botón */}
-          <span className="relative w-full block bg-primary py-3  font-semibold text-primary-foreground group-hover:text-card-foreground group-hover:bg-transparent transition-all duration-300">
-            Ingresar
-          </span>
-        </button>
-
-        {/* Footer: Texto más sutil en Dorado */}
-        <p className="mt-10 text-center text-xs text-muted-foreground">
-          Portal exclusivo para empleados de <span className="text-secondary font-semibold hover:text-secondary/80 transition-colors cursor-default">Boosted</span>.
-        </p>
-      </form>
-    </div>
-  );
-}
+export default Login;
