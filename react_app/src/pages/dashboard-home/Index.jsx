@@ -107,7 +107,7 @@ const ChatbotHome = () => {
 
     // --- 5. RENDERIZADO ---
     return (
-        <div className="flex h-screen overflow-hidden bg-[#f8fafc] dark:bg-[#0f172a]">
+        <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-200">
 
             {/* Sidebar (Layout) */}
             <Sidebar onToggleCollapse={toggleSidebar} />

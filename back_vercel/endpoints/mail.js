@@ -14,14 +14,15 @@ const router = express.Router();
 // ⚠️ Reemplaza por tus valores (o idealmente usa variables de entorno)
 const ACCESS_KEY = "MI_CLAVE_SECRETA_AQUI";
 const MAIL_CREDENTIALS = {
-  host: "<inserte host>",
+  host: "smtp.google.com",
   port: 465,
   secure: true, // true si usas 465
   auth: {
-    user: "<inserte mail>",
-    pass: "<inserte pass>",
+    user: "camilo.valencia1@mail.udp.cl",
+    pass: "Ph0Py0.R",
   },
 };
+//udp.2025
 const MAX_RECIPIENTS = 10;
 
 // --- MIDDLEWARES ---

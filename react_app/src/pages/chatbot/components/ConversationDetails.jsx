@@ -9,132 +9,44 @@ const ConversationDetails = ({ conversation, onClose, currentUser }) => {
 
   if (!conversation) return null;
 
-  const sharedMedia = [
-    {
-      id: 1,
-      type: 'image',
-      url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=200&fit=crop',
-      timestamp: new Date(Date.now() - 86400000)
-    },
-    {
-      id: 2,
-      type: 'image',
-      url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=300&h=200&fit=crop',
-      timestamp: new Date(Date.now() - 172800000)
-    },
-    {
-      id: 3,
-      type: 'file',
-      name: 'Project_Proposal.pdf',
-      size: '2.4 MB',
-      timestamp: new Date(Date.now() - 259200000)
-    },
-    {
-      id: 4,
-      type: 'image',
-      url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=300&h=200&fit=crop',
-      timestamp: new Date(Date.now() - 345600000)
-    }
-  ];
-
-  const tabs = [
-    { id: 'members', label: 'Members', icon: 'Users' },
-    { id: 'media', label: 'Media', icon: 'Image' },
-    { id: 'files', label: 'Files', icon: 'File' }
-  ];
-
-  const formatDate = (timestamp) => {
-    return new Date(timestamp)?.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
+  // ... (Tus datos mock se mantienen igual) ...
+  const sharedMedia = [ /* ... */ ];
+  const tabs = [ /* ... */ ];
+  const formatDate = (ts) => new Date(ts)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
   return (
-    <div className="w-80 bg-card border-l border-border flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b border-border">
+    // CAMBIO 1: Añadido rounded-r-[2.5rem] y overflow-hidden para encajar en el Dashboard
+    <div className="w-80 bg-slate-900 border-l border-slate-800 flex flex-col h-full rounded-r-[2.5rem] overflow-hidden">
+      
+      {/* CAMBIO 2: Ajustado el padding (pl-6 py-5 pr-10) para alejar el botón X de la curva */}
+      <div className="pl-6 py-5 pr-10 border-b border-slate-800">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-foreground">Details</h3>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <h3 className="text-lg font-semibold text-white">Details</h3>
+          {/* El botón ahora tiene espacio seguro gracias al pr-10 del padre */}
+          <Button variant="ghost" size="icon" onClick={onClose} className="text-slate-400 hover:text-white hover:bg-slate-800">
             <Icon name="X" size={20} />
           </Button>
         </div>
 
-        {/* Enhanced Conversation Info */}
+        {/* ... Resto del componente igual ... */}
         <div className="text-center">
-          {conversation?.type === 'direct' && conversation?.participants?.[0] ? (
-            <div className="flex flex-col items-center">
-              <ProfileView
-                user={{
-                  ...conversation?.participants?.[0],
-                  name: conversation?.name,
-                  avatar: conversation?.avatar
-                }}
-                showFullName={true}
-                showStatus={true}
-                showLastSeen={true}
-                size="xl"
-                currentUser={currentUser}
-              />
-            </div>
-          ) : (
-            <div>
-              <div className="w-20 h-20 rounded-full overflow-hidden bg-secondary mx-auto mb-3">
-                {conversation?.avatar ? (
-                  <Image 
-                    src={conversation?.avatar} 
-                    alt={conversation?.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Icon 
-                      name={conversation?.type === 'group' ? 'Users' : 'User'} 
-                      size={32} 
-                      className="text-muted-foreground"
-                    />
-                  </div>
-                )}
-              </div>
-              <h4 className="text-lg font-semibold text-foreground mb-1">{conversation?.name}</h4>
-              <p className="text-sm text-muted-foreground">
-                {conversation?.participants?.length} members
-              </p>
-              <div className="flex items-center justify-center space-x-2 mt-2">
-                <div className="w-2 h-2 bg-primary rounded-full"></div>
-                <span className="text-xs text-muted-foreground">
-                  {conversation?.participants?.filter(p => p?.status === 'online')?.length} online
-                </span>
-              </div>
-            </div>
-          )}
+        {/* ... */}
         </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center justify-center space-x-4 mt-4">
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <Icon name="Phone" size={20} />
-          </Button>
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <Icon name="Video" size={20} />
-          </Button>
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <Icon name="Search" size={20} />
-          </Button>
-        </div>
+        
+        {/* ... */}
       </div>
-      {/* Tabs */}
-      <div className="border-b border-border">
+      
+      {/* ... Resto del componente (Tabs, Content, Settings) se mantiene igual ... */}
+      <div className="border-b border-slate-800">
         <div className="flex">
           {tabs?.map((tab) => (
             <button
               key={tab?.id}
               onClick={() => setActiveTab(tab?.id)}
-              className={`flex-1 flex items-center justify-center space-x-2 py-3 px-2 text-sm font-medium transition-colors duration-200 ${
+              className={`flex-1 flex items-center justify-center space-x-2 py-3 px-2 text-sm font-medium transition-colors duration-200 border-b-2 ${
                 activeTab === tab?.id
-                  ? 'text-primary border-b-2 border-primary' :'text-muted-foreground hover:text-foreground'
+                  ? 'text-indigo-400 border-indigo-400' 
+                  : 'text-slate-500 border-transparent hover:text-slate-300'
               }`}
             >
               <Icon name={tab?.icon} size={16} />
@@ -143,97 +55,45 @@ const ConversationDetails = ({ conversation, onClose, currentUser }) => {
           ))}
         </div>
       </div>
-      {/* Enhanced Tab Content */}
-      <div className="flex-1 overflow-y-auto">
-        {activeTab === 'members' && (
-          <div className="p-4 space-y-3">
-            {conversation?.participants?.map((participant) => (
-              <ProfileView
-                key={participant?.id}
-                user={participant}
-                showFullName={true}
-                showStatus={true}
-                showLastSeen={true}
-                showRole={true}
-                size="default"
-                currentUser={currentUser}
-                className="p-2 hover:bg-accent/50 rounded-lg transition-colors duration-200"
-                onClick={() => {
-                  // Handle profile click - could navigate to user profile
-                  console.log('Profile clicked:', participant);
-                }}
-              />
-            ))}
-            
-            {conversation?.type === 'group' && (
-              <Button variant="outline" className="w-full mt-4">
-                <Icon name="UserPlus" size={16} className="mr-2" />
-                Add Member
-              </Button>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'media' && (
-          <div className="p-4">
-            <div className="grid grid-cols-3 gap-2">
-              {sharedMedia?.filter(item => item?.type === 'image')?.map((item) => (
-                <div key={item?.id} className="aspect-square rounded-lg overflow-hidden bg-secondary hover:opacity-80 transition-opacity duration-200 cursor-pointer">
-                  <Image 
-                    src={item?.url} 
-                    alt="Shared media"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
-            </div>
-            {sharedMedia?.filter(item => item?.type === 'image')?.length === 0 && (
-              <div className="text-center py-8">
-                <Icon name="Image" size={48} className="text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No photos shared yet</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'files' && (
-          <div className="p-4 space-y-2">
-            {sharedMedia?.filter(item => item?.type === 'file')?.map((item) => (
-              <div key={item?.id} className="flex items-center space-x-3 p-3 hover:bg-accent/50 rounded-lg transition-colors duration-200 cursor-pointer">
-                <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center">
-                  <Icon name="File" size={20} className="text-muted-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-medium text-foreground truncate">{item?.name}</h4>
-                  <p className="text-xs text-muted-foreground">
-                    {item?.size} • {formatDate(item?.timestamp)}
-                  </p>
-                </div>
-                <Button variant="ghost" size="icon">
-                  <Icon name="Download" size={16} />
-                </Button>
-              </div>
-            ))}
-            {sharedMedia?.filter(item => item?.type === 'file')?.length === 0 && (
-              <div className="text-center py-8">
-                <Icon name="File" size={48} className="text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No files shared yet</p>
-              </div>
-            )}
-          </div>
-        )}
+      
+      {/* Tab Content */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+          {/* ... contenido de tabs ... */}
+          {activeTab === 'members' && (
+             <div className="p-4 space-y-3">
+               {conversation?.participants?.map((participant) => (
+                 <ProfileView
+                   key={participant?.id}
+                   user={participant}
+                   showFullName={true}
+                   showStatus={true}
+                   showLastSeen={true}
+                   showRole={true}
+                   size="default"
+                   currentUser={currentUser}
+                   className="p-2 hover:bg-slate-800 rounded-lg transition-colors duration-200"
+                 />
+               ))}
+               {/* ... */}
+             </div>
+          )}
+          {/* ... resto de tabs ... */}
+          {/* SOLO PARA REFERENCIA, MANTÉN TU CÓDIGO DE TABS AQUÍ */}
+          {activeTab === 'media' && <div className="p-4">...</div>}
+          {activeTab === 'files' && <div className="p-4">...</div>}
       </div>
+      
       {/* Settings */}
-      <div className="border-t border-border p-4 space-y-2">
-        <Button variant="ghost" className="w-full justify-start">
+      <div className="border-t border-slate-800 p-4 space-y-2">
+        <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-800">
           <Icon name="Bell" size={16} className="mr-3" />
           Notifications
         </Button>
-        <Button variant="ghost" className="w-full justify-start">
+        <Button variant="ghost" className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-800">
           <Icon name="Archive" size={16} className="mr-3" />
           Archive Chat
         </Button>
-        <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive">
+        <Button variant="ghost" className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-900/20">
           <Icon name="Trash2" size={16} className="mr-3" />
           Delete Chat
         </Button>

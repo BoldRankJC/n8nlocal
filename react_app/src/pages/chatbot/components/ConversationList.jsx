@@ -42,63 +42,73 @@ const ConversationList = ({ conversations, activeConversation, onConversationSel
     if (type === 'image') return `${senderName}: 📷 Photo`;
     if (type === 'file') return `${senderName}: 📎 File`;
     
-    const truncatedContent = content?.length > 50 ? `${content?.substring(0, 50)}...` : content;
+    const truncatedContent = content?.length > 40 ? `${content?.substring(0, 40)}...` : content;
     return `${senderName}: ${truncatedContent}`;
   };
 
   return (
-    <div className="flex flex-col h-full bg-card border-r border-border">
-      {/* Header */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground">Messages</h2>
-          <button className="p-2 hover:bg-accent/50 rounded-lg transition-colors duration-200">
+    <div className="flex flex-col h-full bg-slate-900 border-r border-slate-800">
+      
+      {/* 1. Header con más espacio (p-6 en lugar de p-4) */}
+      <div className="pt-6 px-6 pb-4 border-b border-transparent">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-white tracking-tight">Messages</h2>
+          <button className="p-2.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl transition-all duration-200 shadow-sm hover:shadow">
             <Icon name="Plus" size={20} />
           </button>
         </div>
         
-        {/* Search */}
-        <div className="relative">
+        {/* Search con más altura y mejor contraste */}
+        <div className="relative group">
           <Input
             type="search"
             placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e?.target?.value)}
-            className="pl-10"
+            className="pl-11 h-12 bg-slate-950 border-slate-800 text-slate-200 placeholder-slate-500 rounded-2xl focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all"
           />
           <Icon 
             name="Search" 
-            size={16} 
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"
+            size={18} 
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors"
           />
         </div>
       </div>
-      {/* Conversation List */}
-      <div className="flex-1 overflow-y-auto">
+
+      {/* 2. Lista con padding lateral y espaciado vertical */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar px-4 pb-4">
         {filteredConversations?.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-            <Icon name="MessageCircle" size={48} className="text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">
+            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                <Icon name="MessageCircle" size={32} className="text-slate-600" />
+            </div>
+            <h3 className="text-lg font-medium text-slate-300 mb-2">
               {searchQuery ? 'No conversations found' : 'No conversations yet'}
             </h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-slate-500 text-sm max-w-[200px] mx-auto">
               {searchQuery 
                 ? 'Try adjusting your search terms' :'Start a new conversation to get chatting'
               }
             </p>
           </div>
         ) : (
-          <div className="space-y-1 p-2">
+          <div className="space-y-2 mt-2">
             {filteredConversations?.map((conversation) => (
               <button
                 key={conversation?.id}
                 onClick={() => onConversationSelect(conversation)}
-                className={`w-full p-3 rounded-lg text-left transition-all duration-200 hover:bg-accent/50 ${
+                className={`w-full p-4 rounded-2xl text-left transition-all duration-200 group relative overflow-hidden ${
                   activeConversation?.id === conversation?.id 
-                    ? 'bg-accent border border-primary/20' :'hover:bg-accent/30'
+                    ? 'bg-slate-800 ring-1 ring-slate-700 shadow-lg shadow-slate-900/50' 
+                    : 'hover:bg-slate-800/50 border border-transparent hover:border-slate-800/50'
                 }`}
               >
-                <div className="flex items-start space-x-3">
+                {/* Indicador de activo sutil a la izquierda */}
+                {activeConversation?.id === conversation?.id && (
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 rounded-l-2xl"></div>
+                )}
+
+                <div className="flex items-start space-x-4 pl-1">
                   {/* Enhanced Profile View */}
                   {conversation?.type === 'direct' && conversation?.participants?.[0] ? (
                     <ProfileView
@@ -116,7 +126,7 @@ const ConversationList = ({ conversations, activeConversation, onConversationSel
                     />
                   ) : (
                     <div className="relative flex-shrink-0">
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-secondary">
+                      <div className="w-12 h-12 rounded-2xl overflow-hidden bg-slate-800 border border-slate-700 flex items-center justify-center shadow-inner">
                         {conversation?.avatar ? (
                           <Image 
                             src={conversation?.avatar} 
@@ -124,76 +134,42 @@ const ConversationList = ({ conversations, activeConversation, onConversationSel
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Icon 
-                              name={conversation?.type === 'group' ? 'Users' : 'User'} 
-                              size={20} 
-                              className="text-muted-foreground"
-                            />
-                          </div>
+                          <Icon 
+                            name={conversation?.type === 'group' ? 'Users' : 'User'} 
+                            size={20} 
+                            className="text-slate-400"
+                          />
                         )}
                       </div>
                     </div>
                   )}
 
                   {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="text-sm font-medium text-foreground truncate">
+                  <div className="flex-1 min-w-0 py-0.5">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <h3 className={`text-sm font-semibold truncate transition-colors ${activeConversation?.id === conversation?.id ? 'text-white' : 'text-slate-200'}`}>
                         {conversation?.name}
                       </h3>
-                      <div className="flex items-center space-x-2 flex-shrink-0">
+                      <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
                         {conversation?.lastMessage && (
-                          <span className="text-xs text-muted-foreground">
+                          <span className={`text-[11px] font-medium ${activeConversation?.id === conversation?.id ? 'text-indigo-300' : 'text-slate-500'}`}>
                             {formatTimestamp(conversation?.lastMessage?.timestamp)}
                           </span>
-                        )}
-                        {conversation?.unreadCount > 0 && (
-                          <div className="bg-error text-error-foreground text-xs font-medium px-2 py-0.5 rounded-full min-w-[20px] text-center">
-                            {conversation?.unreadCount > 99 ? '99+' : conversation?.unreadCount}
-                          </div>
                         )}
                       </div>
                     </div>
                     
-                    <p className="text-sm text-muted-foreground truncate">
-                      {getLastMessagePreview(conversation)}
-                    </p>
-                    
-                    {/* Enhanced status display for groups */}
-                    {conversation?.type === 'group' && (
-                      <div className="flex items-center justify-between mt-1">
-                        <div className="flex items-center">
-                          <Icon name="Users" size={12} className="text-muted-foreground mr-1" />
-                          <span className="text-xs text-muted-foreground">
-                            {conversation?.participants?.length} members
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          {conversation?.participants?.slice(0, 3)?.map((participant, index) => (
-                            <div
-                              key={participant?.id}
-                              className="w-4 h-4 rounded-full border border-background"
-                              style={{ marginLeft: index > 0 ? '-4px' : '0' }}
-                            >
-                              <ProfileView
-                                user={participant}
-                                showFullName={false}
-                                showStatus={true}
-                                showLastSeen={false}
-                                size="sm"
-                                currentUser={currentUser}
-                              />
-                            </div>
-                          ))}
-                          {conversation?.participants?.length > 3 && (
-                            <span className="text-xs text-muted-foreground ml-1">
-                              +{conversation?.participants?.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                    <div className="flex items-center justify-between">
+                        <p className={`text-xs truncate max-w-[85%] ${activeConversation?.id === conversation?.id ? 'text-slate-400' : 'text-slate-500 group-hover:text-slate-400'}`}>
+                          {getLastMessagePreview(conversation)}
+                        </p>
+                        
+                        {conversation?.unreadCount > 0 && (
+                          <div className="bg-indigo-500 text-white text-[10px] font-bold h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full shadow-md shadow-indigo-500/20">
+                            {conversation?.unreadCount > 99 ? '99+' : conversation?.unreadCount}
+                          </div>
+                        )}
+                    </div>
                   </div>
                 </div>
               </button>

@@ -44,6 +44,7 @@ const MessageThread = ({ conversation, messages, currentUser, onSendMessage, onE
     }
   };
 
+  // ... (Funciones de handleEditStart, handleEditSave, etc. se mantienen igual)
   const handleEditStart = (message) => {
     setEditingMessageId(message?.id);
     setEditContent(message?.content);
@@ -92,97 +93,31 @@ const MessageThread = ({ conversation, messages, currentUser, onSendMessage, onE
 
   if (!conversation) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-background">
+      <div className="flex-1 flex items-center justify-center bg-slate-900">
         <div className="text-center">
-          <Icon name="MessageCircle" size={64} className="text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-xl font-medium text-foreground mb-2">Welcome to ChatFlow</h3>
-          <p className="text-muted-foreground">Select a conversation to start messaging</p>
+          <Icon name="MessageCircle" size={64} className="text-slate-700 mx-auto mb-4" />
+          <h3 className="text-xl font-medium text-slate-200 mb-2">Welcome to ChatFlow</h3>
+          <p className="text-slate-500">Select a conversation to start messaging</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-background">
+    <div className="flex-1 flex flex-col bg-slate-800">
       {/* Enhanced Header with ProfileView */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-card">
-        <div className="flex items-center space-x-3">
-          {conversation?.type === 'direct' && conversation?.participants?.[0] ? (
-            <ProfileView
-              user={{
-                ...conversation?.participants?.[0],
-                name: conversation?.name,
-                avatar: conversation?.avatar
-              }}
-              showFullName={true}
-              showStatus={true}
-              showLastSeen={true}
-              size="lg"
-              currentUser={currentUser}
-            />
-          ) : (
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-full overflow-hidden bg-secondary">
-                {conversation?.avatar ? (
-                  <Image
-                    src={conversation?.avatar}
-                    alt={conversation?.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Icon
-                      name={conversation?.type === 'group' ? 'Users' : 'User'}
-                      size={20}
-                      className="text-muted-foreground"
-                    />
-                  </div>
-                )}
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">{conversation?.name}</h2>
-                <div className="flex items-center space-x-2">
-                  <p className="text-sm text-muted-foreground">
-                    {conversation?.participants?.length} members
-                  </p>
-                  <span className="text-muted-foreground">•</span>
-                  <div className="flex items-center space-x-1">
-                    {conversation?.participants?.filter(p => p?.status === 'online')?.length > 0 && (
-                      <>
-                        <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        <span className="text-xs text-muted-foreground">
-                          {conversation?.participants?.filter(p => p?.status === 'online')?.length} online
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Button variant="ghost" size="icon">
-            <Icon name="Phone" size={20} />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <Icon name="Video" size={20} />
-          </Button>
-          <Button variant="ghost" size="icon">
-            <Icon name="MoreVertical" size={20} />
-          </Button>
-        </div>
-      </div>
+      {/* Nota: Este header ya está renderizado en el Dashboard principal, pero si se usa standalone: */}
+      {/* <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900"> ... </div> */}
+      {/* Dejaré el contenedor vacío aquí porque el header lo maneja el padre en tu dashboard actualizado */}
 
       {/* Messages with Enhanced Profile Display */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
         {Object.entries(groupedMessages)?.map(([dateKey, dayMessages]) => (
           <div key={dateKey}>
             {/* Date Separator */}
             <div className="flex items-center justify-center my-6">
-              <div className="bg-muted px-3 py-1 rounded-full">
-                <span className="text-xs text-muted-foreground font-medium">
+              <div className="bg-slate-800 border border-slate-700 px-3 py-1 rounded-full shadow-sm">
+                <span className="text-xs text-slate-400 font-medium">
                   {formatMessageDate(dayMessages?.[0]?.timestamp)}
                 </span>
               </div>
@@ -201,10 +136,10 @@ const MessageThread = ({ conversation, messages, currentUser, onSendMessage, onE
                   key={message?.id}
                   className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} group`}
                 >
-                  <div className={`flex max-w-[70%] ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'}`}>
+                  <div className={`flex max-w-[75%] ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'}`}>
                     {/* Enhanced Avatar with ProfileView */}
                     {showAvatar && !isCurrentUser && (
-                      <div className="flex-shrink-0 mr-2">
+                      <div className="flex-shrink-0 mr-2 mt-1">
                         <ProfileView
                           user={message?.sender}
                           showFullName={false}
@@ -221,53 +156,50 @@ const MessageThread = ({ conversation, messages, currentUser, onSendMessage, onE
                       {/* Enhanced sender name display for group chats */}
                       {!isCurrentUser && conversation?.type === 'group' && showAvatar && (
                         <div className="flex items-center space-x-2 mb-1 ml-1">
-                          <p className="text-xs font-medium text-foreground">
+                          <p className="text-xs font-medium text-slate-300">
                             {message?.sender?.name}
                           </p>
                           {message?.sender?.role === 'admin' && (
-                            <Icon name="Crown" size={10} className="text-warning" />
-                          )}
-                          {message?.sender?.role === 'moderator' && (
-                            <Icon name="Shield" size={10} className="text-info" />
+                            <Icon name="Crown" size={10} className="text-amber-400" />
                           )}
                         </div>
                       )}
 
                       {/* Message Bubble */}
                       <div
-                        className={`px-4 py-2 rounded-2xl ${isCurrentUser
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-card border border-border text-card-foreground'
+                        className={`px-4 py-2.5 rounded-2xl shadow-sm ${isCurrentUser
+                            ? 'bg-indigo-600 text-white rounded-tr-sm'
+                            : 'bg-slate-800 border border-slate-700/50 text-slate-200 rounded-tl-sm'
                           }`}
                       >
                         {editingMessageId === message?.id ? (
-                          <div className="space-y-2">
+                          <div className="space-y-2 min-w-[200px]">
                             <textarea
                               value={editContent}
                               onChange={(e) => setEditContent(e?.target?.value)}
-                              className="w-full bg-transparent border-none outline-none resize-none text-sm"
+                              className="w-full bg-slate-900/50 rounded border border-white/20 p-2 outline-none resize-none text-sm text-white"
                               rows={2}
                               autoFocus
                             />
-                            <div className="flex items-center space-x-2">
-                              <Button size="xs" onClick={handleEditSave}>
-                                Save
-                              </Button>
-                              <Button size="xs" variant="ghost" onClick={handleEditCancel}>
+                            <div className="flex items-center space-x-2 justify-end">
+                              <Button size="xs" onClick={handleEditCancel} className="bg-white/10 hover:bg-white/20 text-white border-none">
                                 Cancel
+                              </Button>
+                              <Button size="xs" onClick={handleEditSave} className="bg-white text-indigo-600 hover:bg-gray-100 border-none">
+                                Save
                               </Button>
                             </div>
                           </div>
                         ) : (
                           <>
                             {message?.type === 'text' && (
-                              <p className="text-sm whitespace-pre-wrap break-words">
+                              <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
                                 {message?.content}
                               </p>
                             )}
                             {message?.type === 'image' && (
                               <div className="space-y-2">
-                                <div className="rounded-lg overflow-hidden max-w-xs">
+                                <div className="rounded-lg overflow-hidden max-w-xs border border-white/10">
                                   <Image
                                     src={message?.content}
                                     alt="Shared image"
@@ -275,13 +207,13 @@ const MessageThread = ({ conversation, messages, currentUser, onSendMessage, onE
                                   />
                                 </div>
                                 {message?.caption && (
-                                  <p className="text-sm">{message?.caption}</p>
+                                  <p className="text-sm opacity-90">{message?.caption}</p>
                                 )}
                               </div>
                             )}
                             {message?.type === 'file' && (
-                              <div className="flex items-center space-x-3 p-2 bg-muted/20 rounded-lg">
-                                <Icon name="File" size={24} />
+                              <div className="flex items-center space-x-3 p-2 bg-black/20 rounded-lg">
+                                <Icon name="File" size={24} className={isCurrentUser ? "text-white/80" : "text-indigo-400"} />
                                 <div>
                                   <p className="text-sm font-medium">{message?.fileName}</p>
                                   <p className="text-xs opacity-70">{message?.fileSize}</p>
@@ -294,18 +226,18 @@ const MessageThread = ({ conversation, messages, currentUser, onSendMessage, onE
 
                       {/* Message Actions */}
                       {editingMessageId !== message?.id && (
-                        <div className={`absolute top-0 ${isCurrentUser ? 'left-0 -translate-x-full' : 'right-0 translate-x-full'} opacity-0 group-hover:opacity-100 transition-opacity duration-200`}>
-                          <div className="flex items-center space-x-1 bg-popover border border-border rounded-lg p-1 shadow-lg">
-                            <Button size="xs" variant="ghost">
+                        <div className={`absolute top-0 ${isCurrentUser ? 'left-0 -translate-x-full pr-2' : 'right-0 translate-x-full pl-2'} opacity-0 group-hover:opacity-100 transition-opacity duration-200`}>
+                          <div className="flex items-center space-x-0.5 bg-slate-800 border border-slate-700 rounded-lg p-0.5 shadow-lg">
+                            {/* <Button size="xs" variant="ghost" className="text-slate-400 hover:text-white hover:bg-slate-700">
                               <Icon name="MessageCircle" size={14} />
-                            </Button>
+                            </Button> */}
                             {canEditMessage(message) && (
-                              <Button size="xs" variant="ghost" onClick={() => handleEditStart(message)}>
+                              <Button size="xs" variant="ghost" onClick={() => handleEditStart(message)} className="text-slate-400 hover:text-white hover:bg-slate-700 h-7 w-7">
                                 <Icon name="Edit2" size={14} />
                               </Button>
                             )}
                             {canDeleteMessage(message) && (
-                              <Button size="xs" variant="ghost" onClick={() => onDeleteMessage(message?.id)}>
+                              <Button size="xs" variant="ghost" onClick={() => onDeleteMessage(message?.id)} className="text-slate-400 hover:text-red-400 hover:bg-slate-700 h-7 w-7">
                                 <Icon name="Trash2" size={14} />
                               </Button>
                             )}
@@ -315,14 +247,14 @@ const MessageThread = ({ conversation, messages, currentUser, onSendMessage, onE
 
                       {/* Timestamp and Status */}
                       <div className={`flex items-center space-x-1 mt-1 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-[10px] text-slate-500 font-medium">
                           {formatMessageTime(message?.timestamp)}
                         </span>
                         {isCurrentUser && (
                           <Icon
                             name={message?.status === 'read' ? 'CheckCheck' : 'Check'}
                             size={12}
-                            className={message?.status === 'read' ? 'text-primary' : 'text-muted-foreground'}
+                            className={message?.status === 'read' ? 'text-emerald-500' : 'text-slate-500'}
                           />
                         )}
                       </div>
