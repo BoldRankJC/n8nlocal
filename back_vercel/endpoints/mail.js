@@ -18,11 +18,11 @@ const MAIL_CREDENTIALS = {
   port: 465,
   secure: true, // true si usas 465
   auth: {
-    user: "camilo.valencia1@mail.udp.cl",
-    pass: "Ph0Py0.R",
+    user: "cvalencia1@boosted.cl",
+    pass: "Kh68_74xx",
   },
 };
-//udp.2025
+
 const MAX_RECIPIENTS = 10;
 
 // --- MIDDLEWARES ---
