@@ -1,1682 +1,1565 @@
-import React, { useState, useEffect } from 'react';
-import Sidebar from '../../components/ui/Sidebar';
+import React, { useState, useMemo } from 'react';
 import {
-    DollarSign, Package, Factory, Users, Briefcase, // <--- Users agregado al import
-    TrendingUp, ArrowUpRight, ArrowDownRight, AlertCircle,
-    CheckCircle, Clock, Search, Filter, MoreVertical,
-    FileText, Truck, Settings, Plus, X, Save, Trash2,
-    ChevronRight, Play, Workflow, Activity, Zap, AlertTriangle,
-    PauseCircle, RotateCw, Terminal, Key, Send, Database,
-    Globe, Lock, BarChart2, Layers, GitBranch, Bell, Eye, Minus
+    Plus, MoreHorizontal, Calendar, CheckCircle2,
+    ArrowRight, Trash2, Briefcase, Layout,
+    Search, DollarSign, X, MessageSquare, User, Building,
+    Flame, Zap, Snowflake, BarChart2, Users, Puzzle,
+    Workflow, PieChart, TrendingUp, Mail, Slack, Database,
+    Phone, FileText, AlertCircle, Settings, Power, Pencil, ChevronDown, Tag, Clock, Save, Play, Send, Check, Trophy, Star, Archive, Minus, Globe, MapPin, Rocket
 } from 'lucide-react';
-// Asumiendo que CRMView y UsersView son componentes funcionales en otros archivos JS/JSX
-// import { CRMView } from './CRMView';  
-// import { UsersView } from './UsersView';  
-// Dejé los imports comentados porque no se proporcionaron, pero si existen, úsalos.
+import { BoostedLaunchpad } from './components/BoostedLaunchpad';
+import { DealDetailModal } from './components/DealDetailModal';
+import { ContactDetailModal } from './components/ContactDetailModal';
+import { CompanyDetailModal } from './components/CompanyDetailModal';
+import { NewContactModal } from './components/NewContactModal';
+import { NewCompanyModal } from './components/NewCompanyModal';
+import { useEffect } from 'react';
 
-
-// --- Initial Mock Data ---
-
-const initialTransactions = [
-    { id: 'TRX-001', date: '2024-03-15', desc: 'Pago Cliente #4022', category: 'Ventas', amount: 12500.00, status: 'Completed' },
-    { id: 'TRX-002', date: '2024-03-14', desc: 'Proveedor Servidores AWS', category: 'Infraestructura', amount: -850.00, status: 'Completed' },
-    { id: 'TRX-003', date: '2024-03-14', desc: 'Nómina Quincenal', category: 'RRHH', amount: -45000.00, status: 'Pending' },
-    { id: 'TRX-004', date: '2024-03-13', desc: 'Licenci', category: 'Operaciones', amount: -2400.00, status: 'Completed' },
-    { id: 'TRX-005', date: '2024-03-12', desc: 'Pago Cliente #3999', category: 'Ventas', amount: 8900.00, status: 'Completed' },
+// Definición de constantes para el Kanban
+const COLUMNS = [
+    { id: 'TODO', title: 'Oportunidad', color: 'bg-gray-100 dark:bg-slate-800', dot: 'bg-gray-400' },
+    { id: 'IN_PROGRESS', title: 'Negociación', color: 'bg-indigo-50 dark:bg-indigo-900/10', dot: 'bg-indigo-500' },
+    { id: 'REVIEW', title: 'Cierre', color: 'bg-amber-50 dark:bg-amber-900/10', dot: 'bg-amber-500' },
+    { id: 'DONE', title: 'Ganado', color: 'bg-emerald-50 dark:bg-emerald-900/10', dot: 'bg-emerald-500' }
 ];
 
-const initialInvoices = [
-    { id: 'INV-2024-001', client: 'TechCorp Solutions', amount: 4500.00, date: '2024-03-01', dueDate: '2024-03-15', status: 'Paid' },
-    { id: 'INV-2024-002', client: 'Global Logistics Inc', amount: 12500.00, date: '2024-03-10', dueDate: '2024-03-24', status: 'Pending' },
-    { id: 'INV-2024-003', client: 'StartUp Hub', amount: 850.00, date: '2024-02-15', dueDate: '2024-03-01', status: 'Overdue' },
-    { id: 'INV-2024-004', client: 'MegaStore Retail', amount: 3200.00, date: '2024-03-12', dueDate: '2024-03-26', status: 'Pending' },
-];
-
-const initialBudgets = [
-    { category: 'Infraestructura', limit: 5000, spent: 3200, color: 'blue' },
-    { category: 'Marketing', limit: 8000, spent: 6500, color: 'purple' },
-    { category: 'RRHH', limit: 50000, spent: 45000, color: 'rose' },
-    { category: 'Operaciones', limit: 10000, spent: 2400, color: 'emerald' },
-];
-
-
-const initialInventory = [
-    { sku: 'PRD-001', name: 'Laptop Pro X1', stock: 145, min: 50, status: 'In Stock', location: 'Almacén A-12' },
-    { sku: 'PRD-002', name: 'Monitor 4K Ultra', stock: 23, min: 30, status: 'Low Stock', location: 'Almacén B-05' },
-    { sku: 'PRD-003', name: 'Teclado Mecánico', stock: 890, min: 100, status: 'In Stock', location: 'Almacén A-03' },
-    { sku: 'PRD-004', name: 'Mouse Ergonómico', stock: 0, min: 50, status: 'Out of Stock', location: 'Almacén A-04' },
-    { sku: 'PRD-005', name: 'Docking Station', stock: 45, min: 20, status: 'In Stock', location: 'Almacén C-11' },
-];
-
-const initialWorkflows = [
-    { id: 'WF-101', name: 'Sincronización CRM ERP', trigger: 'Cron', status: 'Active', lastRun: 'Hace 5 min', successRate: 99.8, totalRuns: 1450, avgDuration: '1.2s', nodes: 12 },
-    { id: 'WF-102', name: 'Procesamiento de Factur', trigger: 'Webhook', status: 'Active', lastRun: 'Hace 2 horas', successRate: 95.5, totalRuns: 320, avgDuration: '4.5s', nodes: 8 },
-    { id: 'WF-103', name: 'Alerta de Stock Bajo (Slack)', trigger: 'Event', status: 'Active', lastRun: 'Hace 1 día', successRate: 100, totalRuns: 45, avgDuration: '0.8s', nodes: 5 },
-    { id: 'WF-104', name: 'Onboarding Nuevos Empleados', trigger: 'Manual', status: 'Inactive', lastRun: 'Hace 1 semana', successRate: 88.0, totalRuns: 12, avgDuration: '15s', nodes: 24 },
-    { id: 'WF-105', name: 'Reporte Diario de Ventas', trigger: 'Cron', status: 'Error', lastRun: 'Hace 30 min', successRate: 45.0, totalRuns: 8, avgDuration: 'Failed', nodes: 6 },
-];
-
-const initialCredentials = [
-    { id: 'CRED-01', name: 'OpenAI API Production', service: 'OpenAI', status: 'Connected', lastUsed: 'Just now' },
-    { id: 'CRED-02', name: 'Stripe Payments', service: 'Stripe', status: 'Connected', lastUsed: '1 hour ago' },
-    { id: 'CRED-03', name: 'Slack Bot Token', service: 'Slack', status: 'Connected', lastUsed: '5 mins ago' },
-    { id: 'CRED-04', name: 'Google Sheets OAuth', service: 'Google', status: 'Error', lastUsed: '2 days ago' },
-];
-
-// --- Sub-Components ---
-
-const FinanceModule = () => {
-    const [activeTab, setActiveTab] = useState('DASHBOARD');
-    const [transactions, setTransactions] = useState(initialTransactions);
-    const [invoices, setInvoices] = useState(initialInvoices);
-    const [budgets, setBudgets] = useState(initialBudgets);
-
-    // Transaction State
-    const [isTrxModalOpen, setIsTrxModalOpen] = useState(false);
-    const [newTrx, setNewTrx] = useState({ desc: '', category: '', amount: '', status: 'Completed' });
-
-    // Invoice State
-    const [isInvModalOpen, setIsInvModalOpen] = useState(false);
-    const [isViewInvModalOpen, setIsViewInvModalOpen] = useState(false);
-    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-    const [selectedInvoice, setSelectedInvoice] = useState(null);
-    const [newInv, setNewInv] = useState({ client: '', amount: '', dueDate: '', description: '', file: '' });
-
-    // Budget State
-    const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
-    const [editingBudgetIdx, setEditingBudgetIdx] = useState(null);
-    const [budgetForm, setBudgetForm] = useState({ category: '', limit: '', spent: '', color: 'blue' });
-
-    // Calculate KPIs dynamically
-    const totalIncome = transactions.filter(t => t.amount > 0).reduce((acc, curr) => acc + curr.amount, 0);
-    const totalExpenses = Math.abs(transactions.filter(t => t.amount < 0).reduce((acc, curr) => acc + curr.amount, 0));
-    const netProfit = totalIncome - totalExpenses;
-
-    // --- Handlers ---
-
-    const handleAddTransaction = () => {
-        if (!newTrx.desc || !newTrx.amount || !newTrx.category) return;
-
-        const transaction = {
-            id: `TRX-${Math.floor(Math.random() * 10000)}`,
-            date: new Date().toISOString().split('T')[0],
-            desc: newTrx.desc,
-            category: newTrx.category,
-            amount: parseFloat(newTrx.amount),
-            status: newTrx.status
-        };
-
-        setTransactions([transaction, ...transactions]);
-        setIsTrxModalOpen(false);
-        setNewTrx({ desc: '', category: '', amount: '', status: 'Completed' });
-    };
-
-    const handleCreateInvoice = () => {
-        if (!newInv.client || !newInv.amount || !newInv.dueDate) return;
-
-        const invoice = {
-            id: `INV-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000)}`,
-            client: newInv.client,
-            amount: parseFloat(newInv.amount),
-            date: new Date().toISOString().split('T')[0],
-            dueDate: newInv.dueDate,
-            status: 'Pending',
-            description: newInv.description,
-            file: newInv.file
-        };
-
-        setInvoices([invoice, ...invoices]);
-        setIsInvModalOpen(false);
-        setNewInv({ client: '', amount: '', dueDate: '', description: '', file: '' });
-    };
-
-    const handleSaveBudget = () => {
-        if (!budgetForm.category || !budgetForm.limit) return;
-
-        // Remove any non-numeric characters except dot and minus for safety
-        const cleanLimit = budgetForm.limit.toString().replace(/[^0-9.-]/g, '');
-        const cleanSpent = budgetForm.spent.toString().replace(/[^0-9.-]/g, '');
-
-        const newBudget = {
-            category: budgetForm.category,
-            limit: parseFloat(cleanLimit) || 0,
-            spent: parseFloat(cleanSpent) || 0,
-            color: budgetForm.color
-        };
-
-        if (editingBudgetIdx !== null) {
-            const updatedBudgets = [...budgets];
-            updatedBudgets[editingBudgetIdx] = newBudget;
-            setBudgets(updatedBudgets);
-        } else {
-            setBudgets([...budgets, newBudget]);
-        }
-
-        setIsBudgetModalOpen(false);
-        setEditingBudgetIdx(null);
-        setBudgetForm({ category: '', limit: '', spent: '', color: 'blue' });
-    };
-
-    const openEditBudget = (idx) => {
-        const b = budgets[idx];
-        setBudgetForm({
-            category: b.category,
-            limit: b.limit.toString(),
-            spent: b.spent.toString(),
-            color: b.color
-        });
-        setEditingBudgetIdx(idx);
-        setIsBudgetModalOpen(true);
-    };
-
-    return (
-        <div className="p-6 space-y-8">
-
-            {/* Navigación de Pestañas */}
-            <div className="flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2 overflow-x-auto">
-                {[
-                    { id: 'DASHBOARD', label: 'Dashboard', icon: BarChart2 },
-                    { id: 'TRANSACTIONS', label: 'Transacciones', icon: DollarSign },
-                    { id: 'INVOICES', label: 'Facturación', icon: FileText },
-                    { id: 'BUDGETS', label: 'Presupuestos', icon: TrendingUp },
-                ].map(tab => {
-                    const Icon = tab.icon;
-                    return (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id
-                                ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400'
-                                : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-slate-800'
-                                }`}
-                        >
-                            <Icon className="h-4 w-4" />
-                            {tab.label}
-                        </button>
-                    )
-                })}
-            </div>
-
-            {activeTab === 'DASHBOARD' && (
-                <div className="space-y-6">
-                    {/* KPIs */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Ingresos Totales</span>
-                                <DollarSign className="h-5 w-5 text-emerald-500" />
-                            </div>
-                            <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                                ${totalIncome.toLocaleString()}
-                            </div>
-                            <div className="text-sm text-emerald-500 flex items-center gap-1">
-                                <ArrowUpRight className="h-4 w-4" />
-                                +12.5%
-                            </div>
-                        </div>
-
-                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Gastos Operativos</span>
-                                <ArrowDownRight className="h-5 w-5 text-red-500" />
-                            </div>
-                            <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                                ${totalExpenses.toLocaleString()}
-                            </div>
-                            <div className="text-sm text-red-500 flex items-center gap-1">
-                                <ArrowDownRight className="h-4 w-4" />
-                                -2.3%
-                            </div>
-                        </div>
-
-                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Beneficio Neto</span>
-                                <TrendingUp className={`h-5 w-5 ${netProfit >= 0 ? 'text-emerald-500' : 'text-red-500'}`} />
-                            </div>
-                            <div className={`text-3xl font-bold ${netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                ${netProfit.toLocaleString()}
-                            </div>
-                            <div className="text-sm text-emerald-500 flex items-center gap-1">
-                                <ArrowUpRight className="h-4 w-4" />
-                                +18.2%
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Charts Area (Mock) */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Flujo de Caja (Últimos 6 meses)</h3>
-                            <div className="h-64 flex items-end justify-around border-b border-gray-200 dark:border-slate-700 pb-2 relative">
-                                {[65, 45, 75, 55, 85, 70].map((h, i) => (
-                                    <div key={i} className="w-8 h-full flex items-end relative group cursor-pointer">
-                                        <div
-                                            className="absolute bottom-0 left-0 right-0 bg-emerald-500 rounded-t-lg transition-all duration-500 group-hover:bg-emerald-400"
-                                            style={{ height: `${h}%` }}
-                                        ></div>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="flex justify-around text-xs text-gray-500 dark:text-gray-400 pt-2">
-                                <span>Oct</span><span>Nov</span><span>Dic</span><span>Ene</span><span>Feb</span><span>Mar</span>
-                            </div>
-                        </div>
-
-                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Desglose de Gastos</h3>
-                            <div className="space-y-4">
-                                {budgets.map((budget, idx) => (
-                                    <div key={idx} className="space-y-2">
-                                        <div className="flex justify-between items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            <span>{budget.category}</span>
-                                            <span>{Math.round((budget.spent / budget.limit) * 100)}%</span>
-                                        </div>
-                                        <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-3">
-                                            <div
-                                                className={`h-3 rounded-full bg-${budget.color}-500`}
-                                                style={{ width: `${(budget.spent / budget.limit) * 100}%` }}
-                                            ></div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {activeTab === 'TRANSACTIONS' && (
-                <div className="space-y-6">
-
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Historial de Transacciones</h2>
-                        <button
-                            onClick={() => setIsTrxModalOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-medium hover:bg-emerald-700 transition-colors"
-                        >
-                            <Plus className="h-4 w-4" />
-                            Nueva Transacción
-                        </button>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
-                            <thead className="bg-gray-50 dark:bg-slate-700">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fecha</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Descripción</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Categoría</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Monto</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
-                                {transactions.map((trx) => (
-                                    <tr key={trx.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{trx.date}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{trx.desc}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400">
-                                                {trx.category}
-                                            </span>
-                                        </td>
-                                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${trx.amount > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                            {trx.amount > 0 ? '+' : ''}{trx.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${trx.status === 'Completed'
-                                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
-                                                : 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400'
-                                                }`}>
-                                                {trx.status === 'Completed' ? <CheckCircle className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
-                                                {trx.status}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )}
-
-            {activeTab === 'INVOICES' && (
-                <div className="space-y-6">
-
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Facturación</h2>
-                        <button
-                            onClick={() => setIsInvModalOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700"
-                        >
-                            <Plus className="h-4 w-4" />
-                            Crear Factura
-                        </button>
-                    </div>
-
-                    <div className="space-y-4">
-                        {invoices.map((inv) => (
-                            <div
-                                key={inv.id}
-                                onClick={() => {
-                                    setSelectedInvoice(inv);
-                                    setIsViewInvModalOpen(true);
-                                }}
-                                className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex flex-col md:flex-row items-center justify-between gap-4 cursor-pointer hover:shadow-md transition-all hover:border-indigo-200 dark:hover:border-indigo-900"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg text-indigo-600 dark:text-indigo-400">
-                                        <FileText className="h-6 w-6" />
-                                    </div>
-                                    <div>
-                                        <p className="text-lg font-semibold text-gray-900 dark:text-white">{inv.client}</p>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">{inv.id}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-6 text-sm text-gray-700 dark:text-gray-300">
-                                    <div className="text-right">
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">Monto</p>
-                                        <p className="font-bold text-lg">${inv.amount.toLocaleString()}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">Vencimiento</p>
-                                        <p className="font-medium">{inv.dueDate}</p>
-                                    </div>
-                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${inv.status === 'Paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                                        inv.status === 'Overdue' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                                            'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                                        }`}>
-                                        {inv.status}
-                                    </span>
-                                </div>
-                                <ChevronRight className="h-5 w-5 text-gray-400 hidden md:block" />
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {activeTab === 'BUDGETS' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {budgets.map((budget, idx) => (
-                        <div
-                            key={idx}
-                            className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 space-y-4"
-                        >
-
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{budget.category}</h3>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Presupuesto Mensual</p>
-                                </div>
-                                <div>
-                                    <button
-                                        onClick={() => openEditBudget(idx)}
-                                        className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                                    >
-                                        <Settings className="h-5 w-5" />
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                                ${budget.spent.toLocaleString()}
-                            </div>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">de ${budget.limit.toLocaleString()}</p>
-
-                            <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-3">
-                                <div
-                                    className={`h-3 rounded-full bg-${budget.color}-500 transition-all duration-1000`}
-                                    style={{ width: `${(budget.spent / budget.limit) * 100}%` }}
-                                ></div>
-                            </div>
-
-                            <div className="flex justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
-                                <span>{Math.round((budget.spent / budget.limit) * 100)}% utilizado</span>
-                                <span>${(budget.limit - budget.spent).toLocaleString()} restante</span>
-                            </div>
-                        </div>
-                    ))}
-                    <button
-                        onClick={() => {
-                            setEditingBudgetIdx(null);
-                            setBudgetForm({ category: '', limit: '', spent: '', color: 'blue' });
-                            setIsBudgetModalOpen(true);
-                        }}
-                        className="border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-2xl p-6 flex flex-col items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600 transition-all"
-                    >
-                        <Plus className="h-6 w-6 mb-2" />
-                        Nuevo Presupuesto
-                    </button>
-                </div>
-            )}
-
-            {/* Transaction Modal */}
-            {
-                isTrxModalOpen && (
-                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full">
-
-                            <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Nueva Transacción</h2>
-                                <button onClick={() => setIsTrxModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                                    <X className="h-6 w-6" />
-                                </button>
-                            </div>
-
-                            <div className="p-6 space-y-4">
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
-                                    <input
-                                        type="text"
-                                        value={newTrx.desc}
-                                        onChange={(e) => setNewTrx({ ...newTrx, desc: e.target.value })}
-                                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                        placeholder="Ej: Pago de servicios"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Monto</label>
-                                        <input
-                                            type="number"
-                                            value={newTrx.amount}
-                                            onChange={(e) => setNewTrx({ ...newTrx, amount: e.target.value })}
-                                            className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            placeholder="0.00"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoría</label>
-                                        <input
-                                            type="text"
-                                            list="categories"
-                                            value={newTrx.category}
-                                            onChange={(e) => setNewTrx({ ...newTrx, category: e.target.value })}
-                                            className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            placeholder="Escribe o selecciona..."
-                                        />
-                                        <datalist id="categories">
-                                            <option value="Ventas" />
-                                            <option value="Infraestructura" />
-                                            <option value="RRHH" />
-                                            <option value="Operaciones" />
-                                            <option value="Marketing" />
-                                            <option value="Otros" />
-                                        </datalist>
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={handleAddTransaction}
-                                    className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/30"
-                                >
-                                    Registrar Transacción
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-
-            {/* Invoice Modal */}
-            {
-                isInvModalOpen && (
-                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-2xl w-full">
-
-                            <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Nueva Factura</h2>
-                                <button onClick={() => setIsInvModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                                    <X className="h-6 w-6" />
-                                </button>
-                            </div>
-
-                            <div className="p-6 space-y-4">
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cliente</label>
-                                    <input
-                                        type="text"
-                                        value={newInv.client}
-                                        onChange={(e) => setNewInv({ ...newInv, client: e.target.value })}
-                                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                        placeholder="Nombre del cliente"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Monto</label>
-                                        <input
-                                            type="number"
-                                            value={newInv.amount}
-                                            onChange={(e) => setNewInv({ ...newInv, amount: e.target.value })}
-                                            className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            placeholder="0.00"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vencimiento</label>
-                                        <input
-                                            type="date"
-                                            value={newInv.dueDate}
-                                            onChange={(e) => setNewInv({ ...newInv, dueDate: e.target.value })}
-                                            className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
-                                    <textarea
-                                        value={newInv.description}
-                                        onChange={(e) => setNewInv({ ...newInv, description: e.target.value })}
-                                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 h-24 resize-none"
-                                        placeholder="Detalles de la factura..."
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Adjuntar Archivo</label>
-                                    <div className="relative border-2 border-dashed border-gray-200 dark:border-slate-700 p-4 rounded-xl flex items-center justify-center hover:border-indigo-400 transition-colors">
-                                        <input
-                                            type="file"
-                                            className="absolute inset-0 opacity-0 cursor-pointer"
-                                            onChange={(e) => setNewInv({ ...newInv, file: e.target.files?.[0]?.name || '' })}
-                                        />
-                                        <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                                            <FileText className="h-4 w-4" />
-                                            {newInv.file || 'Click para subir PDF o Imagen'}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={handleCreateInvoice}
-                                    className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/30"
-                                >
-                                    Generar Factura
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-
-            {/* Budget Modal */}
-            {
-                isBudgetModalOpen && (
-                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full">
-
-                            <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                                    {editingBudgetIdx !== null ? 'Editar Presupuesto' : 'Nuevo Presupuesto'}
-                                </h2>
-                                <button onClick={() => setIsBudgetModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                                    <X className="h-6 w-6" />
-                                </button>
-                            </div>
-
-                            <div className="p-6 space-y-4">
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoría</label>
-                                    <input
-                                        type="text"
-                                        value={budgetForm.category}
-                                        onChange={(e) => setBudgetForm({ ...budgetForm, category: e.target.value })}
-                                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                        placeholder="Ej: Marketing"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Límite</label>
-                                        <input
-                                            type="number"
-                                            value={budgetForm.limit}
-                                            onChange={(e) => setBudgetForm({ ...budgetForm, limit: e.target.value })}
-                                            className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            placeholder="0.00"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gastado</label>
-                                        <input
-                                            type="number"
-                                            value={budgetForm.spent}
-                                            onChange={(e) => setBudgetForm({ ...budgetForm, spent: e.target.value })}
-                                            className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            placeholder="0.00"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Color</label>
-                                    <div className="flex gap-3">
-                                        {['blue', 'emerald', 'purple', 'rose', 'amber'].map(c => (
-                                            <button
-                                                key={c}
-                                                onClick={() => setBudgetForm({ ...budgetForm, color: c })}
-                                                className={`w-8 h-8 rounded-full bg-${c}-500 ${budgetForm.color === c ? 'ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-slate-800' : ''}`}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={handleSaveBudget}
-                                    className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/30"
-                                >
-                                    Guardar Presupuesto
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-
-            {/* View Invoice Modal */}
-            {isViewInvModalOpen && selectedInvoice && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 px-6 py-4 flex items-start justify-between">
-                            <div>
-                                <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 mb-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                                    </svg>
-                                </div>
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Detalle de Factura</h2>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">{selectedInvoice.id}</p>
-                            </div>
-                            <button onClick={() => setIsViewInvModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                                <X className="h-6 w-6" />
-                            </button>
-                        </div>
-                        <div className="px-6 py-4 space-y-6">
-                            {/* Header Info */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Cliente</p>
-                                    <p className="font-semibold text-gray-900 dark:text-white">{selectedInvoice.client}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">Estado</p>
-                                    <span className={`px-3 py-1 rounded-full text-sm font-bold ${selectedInvoice.status === 'Paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                                        selectedInvoice.status === 'Overdue' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                                            'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                                        }`}>
-                                        {selectedInvoice.status}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Amounts and Dates */}
-                            <div className="grid grid-cols-3 gap-4 border-y border-gray-100 dark:border-slate-700 py-4">
-
-                                <div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">Monto Total</p>
-                                    <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">${selectedInvoice.amount.toLocaleString()}</p>
-                                </div>
-
-                                <div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">Fecha Emisión</p>
-                                    <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedInvoice.date}</p>
-                                </div>
-
-                                <div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase">Vencimiento</p>
-                                    <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedInvoice.dueDate}</p>
-                                </div>
-                            </div>
-
-                            {/* Description */}
-                            <div className="space-y-2">
-
-                                <h4 className="text-md font-semibold text-gray-900 dark:text-white">Descripción</h4>
-
-                                <div className="p-4 bg-gray-50 dark:bg-slate-700 rounded-xl text-sm text-gray-700 dark:text-gray-300">
-                                    {selectedInvoice.description || 'Sin descripción disponible.'}
-                                </div>
-                            </div>
-
-                            {/* File Attachment */}
-                            <div className="space-y-2">
-
-                                <h4 className="text-md font-semibold text-gray-900 dark:text-white">Archivos Adjuntos</h4>
-
-                                {selectedInvoice.file ? (
-                                    <div
-                                        onClick={() => setIsPreviewOpen(true)}
-                                        className="flex items-center gap-4 p-4 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer group relative"
-                                    >
-                                        <FileText className="h-6 w-6 text-indigo-600" />
-
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-medium truncate text-gray-900 dark:text-white">{selectedInvoice.file}</p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">PDF Document • 2.4 MB</p>
-                                        </div>
-
-                                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setIsPreviewOpen(true);
-                                                }}
-                                                className="p-2 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                                                title="Vista Previa"
-                                            >
-                                                <Eye className="h-5 w-5" />
-                                            </button>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    // Simulate download
-                                                    const link = document.createElement('a');
-                                                    link.href = '#';
-                                                    link.download = selectedInvoice.file;
-                                                    document.body.appendChild(link);
-                                                    link.click();
-                                                    document.body.removeChild(link);
-                                                    alert(`Descargando ${selectedInvoice.file}...`);
-                                                }}
-                                                className="p-2 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                                                title="Descargar"
-                                            >
-                                                <Database className="h-5 w-5" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="text-sm text-gray-500 dark:text-gray-400 p-4 border border-gray-200 dark:border-slate-700 rounded-xl">
-                                        No hay archivos adjuntos.
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="p-6 border-t border-gray-100 dark:border-slate-700 flex justify-between">
-                            <button
-                                onClick={() => setIsViewInvModalOpen(false)}
-                                className="px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-slate-700"
-                            >
-                                Cerrar
-                            </button>
-
-                            <button className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors flex items-center gap-2">
-                                <Send className="h-4 w-4" />
-                                Reenviar Factura
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Budget Modal */}
-            {
-                isBudgetModalOpen && (
-                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full">
-
-                            <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                                    {editingBudgetIdx !== null ? 'Editar Presupuesto' : 'Nuevo Presupuesto'}
-                                </h2>
-                                <button onClick={() => setIsBudgetModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                                    <X className="h-6 w-6" />
-                                </button>
-                            </div>
-
-                            <div className="p-6 space-y-4">
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoría</label>
-                                    <input
-                                        type="text"
-                                        value={budgetForm.category}
-                                        onChange={(e) => setBudgetForm({ ...budgetForm, category: e.target.value })}
-                                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                        placeholder="Ej: Marketing"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Límite</label>
-                                        <input
-                                            type="number"
-                                            value={budgetForm.limit}
-                                            onChange={(e) => setBudgetForm({ ...budgetForm, limit: e.target.value })}
-                                            className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            placeholder="0.00"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gastado</label>
-                                        <input
-                                            type="number"
-                                            value={budgetForm.spent}
-                                            onChange={(e) => setBudgetForm({ ...budgetForm, spent: e.target.value })}
-                                            className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                            placeholder="0.00"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Color</label>
-                                    <div className="flex gap-3">
-                                        {['blue', 'emerald', 'purple', 'rose', 'amber'].map(c => (
-                                            <button
-                                                key={c}
-                                                onClick={() => setBudgetForm({ ...budgetForm, color: c })}
-                                                className={`w-8 h-8 rounded-full bg-${c}-500 ${budgetForm.color === c ? 'ring-2 ring-offset-2 ring-gray-400 dark:ring-offset-slate-800' : ''}`}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={handleSaveBudget}
-                                    className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/30"
-                                >
-                                    Guardar Presupuesto
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
-
-            {/* File Preview Modal */}
-            {isPreviewOpen && selectedInvoice && (
-                <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-4xl w-full h-[90vh] flex flex-col">
-
-                        <div className="px-6 py-3 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                                <FileText className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                                <div>
-                                    <p className="font-semibold text-gray-900 dark:text-white">{selectedInvoice.file}</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Vista Previa</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => {
-                                        // Simulate download
-                                        const link = document.createElement('a');
-                                        link.href = '#';
-                                        link.download = selectedInvoice.file;
-                                        document.body.appendChild(link);
-                                        link.click();
-                                        document.body.removeChild(link);
-                                        alert(`Descargando ${selectedInvoice.file}...`);
-                                    }}
-                                    className="p-2 text-gray-400 hover:text-white bg-gray-100 dark:bg-slate-800 hover:bg-indigo-600 dark:hover:bg-indigo-600 rounded-lg transition-all"
-                                >
-                                    <Database className="h-5 w-5" />
-                                </button>
-                                <button
-                                    onClick={() => setIsPreviewOpen(false)}
-                                    className="p-2 text-gray-400 hover:text-white bg-gray-100 dark:bg-slate-800 hover:bg-red-600 dark:hover:bg-red-600 rounded-lg transition-all"
-                                >
-                                    <X className="h-6 w-6" />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="flex-1 flex flex-col items-center justify-center p-8 bg-gray-100 dark:bg-slate-900 overflow-auto">
-
-                            <div className="text-center p-10 border border-dashed border-gray-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800">
-                                <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
-                                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Vista Previa no disponible</h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
-                                    Este es un archivo de demostración. En un entorno de producción, aquí se mostraría el visor de PDF o la imagen real.
-                                </p>
-                                <button
-                                    onClick={() => {
-                                        // Simulate download
-                                        const link = document.createElement('a');
-                                        link.href = '#';
-                                        link.download = selectedInvoice.file;
-                                        document.body.appendChild(link);
-                                        link.click();
-                                        document.body.removeChild(link);
-                                        alert(`Descargando ${selectedInvoice.file}...`);
-                                    }}
-                                    className="mt-6 px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/30 inline-flex items-center gap-2"
-                                >
-                                    <Database className="h-5 w-5" />
-                                    Descargar Archivo
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+const companyService = {
+    getAll: () => api.get('/companies'),
+    getById: (id) => api.get(`/companies/${id}`),
+    create: (data) => api.post('/companies', data),
+    update: (id, data) => api.put(`/companies/${id}`, data),
+    delete: (id) => api.delete(`/companies/${id}`)
+};
+const contactService = {
+    getAll: () => api.get('/contacts'),
+    getByCompany: (companyId) => api.get(`/contacts?company=${companyId}`),
+    create: (data) => api.post('/contacts', data),
+    update: (id, data) => api.put(`/contacts/${id}`, data),
+    delete: (id) => api.delete(`/contacts/${id}`)
+};
+const dealService = {
+    getAll: () => api.get('/deals'),
+    getByCompany: (companyId) => api.get(`/deals?company=${companyId}`),
+    create: (data) => api.post('/deals', data),
+    update: (id, data) => api.put(`/deals/${id}`, data),
+    delete: (id) => api.delete(`/deals/${id}`)
 };
 
-const SCMModule = () => {
-    const [inventory, setInventory] = useState(initialInventory);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newItem, setNewItem] = useState({ name: '', stock: '', min: '', location: '' });
+const CRMView = () => {
+    const [activeTab, setActiveTab] = useState('PIPELINE');
+    const [showCelebration, setShowCelebration] = useState(false);
+    const [selectedDeal, setSelectedDeal] = useState(null);
+    const [selectedContact, setSelectedContact] = useState(null);
+    const [selectedCompany, setSelectedCompany] = useState(null);
+    const [isNewContactModalOpen, setIsNewContactModalOpen] = useState(false);
+    const [isNewCompanyModalOpen, setIsNewCompanyModalOpen] = useState(false);
 
-    const updateStock = (sku, change) => {
-        setInventory(inventory.map(item => {
-            if (item.sku === sku) {
-                const newStock = Math.max(0, item.stock + change);
-                let status = 'In Stock';
-                if (newStock === 0) status = 'Out of Stock';
-                else if (newStock <= item.min) status = 'Low Stock';
+    // --- PIPELINE STATE ---
+    const [tasks, setTasks] = useState([]);
 
-                return { ...item, stock: newStock, status };
+    // --- WON DEALS STATE (New Storage) ---
+    const [wonDeals, setWonDeals] = useState([]);
+
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isAutoFormOpen, setIsAutoFormOpen] = useState(false);
+    const [editingAutoId, setEditingAutoId] = useState(null);
+    const [selectedTask, setSelectedTask] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterPriority, setFilterPriority] = useState('ALL');
+    const [reportPeriod, setReportPeriod] = useState('S1');
+
+    // Local state for edit inputs inside the modal
+    const [newTagInput, setNewTagInput] = useState('');
+    const [newCommentInput, setNewCommentInput] = useState('');
+
+    const [newTask, setNewTask] = useState({
+        title: '', description: '', priority: 'MEDIUM', assignee: 'YO', client: '', dealValue: '',
+    });
+
+    const [newAutoData, setNewAutoData] = useState({ name: '', trigger: '', action: '' });
+
+    // --- MOCK DATA FOR NEW TABS ---
+    const [contacts, setContacts] = useState([]);
+
+    const [companies, setCompanies] = useState([]);
+
+    // Cargar datos iniciales
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const [dealsData, contactsData, companiesData] = await Promise.all([
+                    dealService.getAll(),
+                    contactService.getAll(),
+                    companyService.getAll()
+                ]);
+
+                // Mapear Deals a formato Tasks
+                const formattedTasks = dealsData.map(d => ({
+                    id: d._id,
+                    title: d.title,
+                    description: '', // API simple no tiene description aun
+                    status: d.status,
+                    priority: 'MEDIUM', // Default
+                    assignee: 'YO',
+                    dueDate: new Date(d.createdAt).toLocaleDateString(),
+                    tags: [],
+                    client: d.company?.name || 'Sin Cliente',
+                    dealValue: d.value || 0,
+                    score: 50,
+                    comments: []
+                }));
+
+                setTasks(formattedTasks.filter(t => t.status !== 'DONE'));
+                setWonDeals(formattedTasks.filter(t => t.status === 'DONE'));
+
+                // Mapear Contactos
+                setContacts(contactsData.map(c => ({
+                    id: c._id,
+                    name: `${c.firstName} ${c.lastName}`,
+                    role: c.position,
+                    company: c.company?.name || 'Sin Empresa',
+                    email: c.email,
+                    status: 'Cliente', // Default
+                    lastContact: 'Hoy',
+                    tickets: 0
+                })));
+
+                // Mapear Empresas
+                setCompanies(companiesData.map(c => ({
+                    id: c._id,
+                    name: c.name,
+                    industry: c.industry,
+                    relationshipStatus: c.relationshipStatus,
+                    logo: c.name[0],
+                    notes: []
+                })));
+
+            } catch (error) {
+                console.error("Error cargando datos:", error);
             }
-            return item;
-        }));
-    };
-
-    const handleAddItem = () => {
-        if (!newItem.name || !newItem.stock) return;
-
-        const stock = parseInt(newItem.stock);
-        const min = parseInt(newItem.min) || 10;
-        let status = 'In Stock';
-        if (stock === 0) status = 'Out of Stock';
-        else if (stock <= min) status = 'Low Stock';
-
-        const item = {
-            sku: `PRD-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
-            name: newItem.name,
-            stock,
-            min,
-            status,
-            location: newItem.location || 'General'
         };
+        loadData();
+    }, []);
 
-        setInventory([...inventory, item]);
-        setIsModalOpen(false);
-        setNewItem({ name: '', stock: '', min: '', location: '' });
+    const [automations, setAutomations] = useState([
+        { id: 1, name: 'Bienvenida Nuevo Lead', trigger: 'Nuevo Trato Creado', action: 'Enviar Email de Bienvenida', active: true, icon: Mail },
+        { id: 2, name: 'Alerta de Estancamiento', trigger: 'Sin actividad por 5 días', action: 'Notificar al Vendedor', active: true, icon: AlertCircle },
+        { id: 3, name: 'Celebración de Cierre', trigger: 'Estado cambia a Ganado', action: 'Mensaje a Slack #ventas', active: false, icon: Slack },
+        { id: 4, name: 'Alta Prioridad', trigger: 'Valor > $10,000', action: 'Marcar Prioridad Alta', active: true, icon: Zap },
+    ]);
+
+    const [integrations, setIntegrations] = useState([
+        { id: 1, name: 'Google Workspace', desc: 'Sincroniza emails y calendario.', connected: true, icon: Mail, color: 'text-red-500 bg-red-50 dark:bg-red-900/20' },
+        { id: 2, name: 'Slack', desc: 'Notificaciones de equipo en tiempo real.', connected: true, icon: Slack, color: 'text-purple-500 bg-purple-50 dark:bg-purple-900/20' },
+        { id: 3, name: 'Zoom', desc: 'Genera links de reuniones automáticamente.', connected: false, icon: Phone, color: 'text-blue-500 bg-blue-50 dark:bg-blue-900/20' },
+        { id: 4, name: 'ERP / Nómina', desc: 'Sincroniza datos de facturación.', connected: false, icon: Database, color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' },
+    ]);
+
+    // --- VIEW HANDLERS ---
+    const handleUpdateDeal = (updatedDeal) => {
+        setTasks(tasks.map(t => t.id === updatedDeal.id ? { ...t, ...updatedDeal } : t));
     };
 
-    return (
-        <div className="p-6 space-y-6">
+    const handleDeleteDeal = async (dealId) => {
+        if (confirm('¿Estás seguro de eliminar este trato?')) {
+            try {
+                await dealService.delete(dealId);
+                setTasks(tasks.filter(t => t.id !== dealId));
+                setSelectedDeal(null);
+            } catch (error) {
+                console.error("Error eliminando trato:", error);
+            }
+        }
+    };
 
-            {/* Actions Bar */}
-            <div className="flex justify-between items-center gap-4">
+    const handleUpdateContact = (updatedContact) => {
+        // En una app real actualizaríamos el estado de contactos
+        console.log('Contacto actualizado:', updatedContact);
+    };
 
-                <div className="relative flex-1 max-w-md">
-                    <Search className="h-4 w-4 absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
+    const handleUpdateCompany = (updatedCompany) => {
+        // En una app real actualizaríamos el estado de companies
+        console.log('Empresa actualizada:', updatedCompany);
+    };
+
+    const handleCreateContact = async (newContact) => {
+        try {
+            const { id, ...data } = newContact; // Remove ID generated by modal
+            const created = await contactService.create(data);
+            const formatted = {
+                id: created._id,
+                name: `${created.firstName} ${created.lastName}`,
+                role: created.position,
+                company: created.company?.name || 'Sin Empresa', // Ajustar si el backend no devuelve populate inmediato
+                email: created.email,
+                status: 'Cliente',
+                lastContact: 'Hoy',
+                tickets: 0
+            };
+            setContacts([...contacts, formatted]);
+        } catch (error) {
+            console.error("Error creando contacto:", error);
+        }
+    };
+
+    const handleCreateCompany = async (newCompany) => {
+        try {
+            const { id, ...data } = newCompany;
+            const created = await companyService.create(data);
+            const formatted = {
+                id: created._id,
+                name: created.name,
+                industry: created.industry,
+                relationshipStatus: created.relationshipStatus,
+                logo: created.name[0],
+                notes: []
+            };
+            setCompanies([...companies, formatted]);
+        } catch (error) {
+            console.error("Error creando empresa:", error);
+        }
+    };
+
+    // --- LOGIC ---
+    const stats = useMemo(() => {
+        // Calculate stats including active tasks AND won deals
+        const activeValue = tasks.reduce((acc, t) => acc + (t.dealValue || 0), 0);
+        const wonValue = wonDeals.reduce((acc, t) => acc + (t.dealValue || 0), 0);
+
+        const totalValue = activeValue + wonValue;
+
+        const openDeals = tasks.length;
+        const totalWon = wonDeals.length + tasks.filter(t => t.status === 'DONE').length;
+        const totalDeals = tasks.length + wonDeals.length;
+
+        const conversionRate = totalDeals > 0 ? Math.round((totalWon / totalDeals) * 100) : 0;
+
+        return { totalValue, openDeals, conversionRate, totalWon };
+    }, [tasks, wonDeals]);
+
+    const filteredTasks = tasks.filter(t => {
+        const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            t.client?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesPriority = filterPriority === 'ALL' || t.priority === filterPriority;
+        return matchesSearch && matchesPriority;
+    });
+
+    const handleAddTask = async (e) => {
+        e.preventDefault();
+        if (!newTask.title) return;
+
+        try {
+            const dealData = {
+                title: newTask.title,
+                value: Number(newTask.dealValue) || 0,
+                status: 'TODO',
+                // company: ... necesitaríamos el ID de la empresa
+            };
+            const created = await dealService.create(dealData);
+
+            const task = {
+                id: created._id,
+                title: created.title,
+                description: newTask.description,
+                status: 'TODO',
+                priority: newTask.priority,
+                assignee: newTask.assignee,
+                dueDate: 'Por definir',
+                tags: ['Nuevo'],
+                client: newTask.client || 'Sin Cliente',
+                dealValue: Number(newTask.dealValue) || 0,
+                comments: [],
+                score: 0,
+                scoringCriteria: { budget: false, authority: false, need: false, timing: false }
+            };
+            setTasks([...tasks, task]);
+            setNewTask({ title: '', description: '', priority: 'MEDIUM', assignee: 'YO', client: '', dealValue: '' });
+            setIsFormOpen(false);
+        } catch (error) {
+            console.error("Error creando trato:", error);
+        }
+    };
+
+    const handleMoveToWon = (taskId) => {
+        // 1. Start Celebration
+        setShowCelebration(true);
+
+        // 2. Wait for animation
+        setTimeout(async () => {
+            const taskToMove = tasks.find(t => t.id === taskId);
+            if (taskToMove) {
+                try {
+                    await dealService.update(taskId, { status: 'DONE' });
+
+                    setWonDeals([
+                        { ...taskToMove, status: 'DONE', score: 100 }, // Ensure it's 100% and DONE
+                        ...wonDeals
+                    ]);
+                    setTasks(tasks.filter(t => t.id !== taskId));
+
+                    if (selectedTask && selectedTask.id === taskId) {
+                        setSelectedTask(null); // Close modal if open
+                    }
+
+                    // 3. Switch Tab to show the result
+                    setActiveTab('WON');
+                    setShowCelebration(false);
+                } catch (error) {
+                    console.error("Error moviendo a ganado:", error);
+                    setShowCelebration(false);
+                }
+            }
+        }, 1800);
+    };
+
+    const handleSaveAutomation = (e) => {
+        e.preventDefault();
+        if (!newAutoData.name || !newAutoData.trigger || !newAutoData.action) return;
+
+        if (editingAutoId) {
+            setAutomations(prev => prev.map(auto =>
+                auto.id === editingAutoId
+                    ? { ...auto, name: newAutoData.name, trigger: newAutoData.trigger, action: newAutoData.action }
+                    : auto
+            ));
+        } else {
+            const newRule = {
+                id: Date.now(),
+                name: newAutoData.name,
+                trigger: newAutoData.trigger,
+                action: newAutoData.action,
+                active: true,
+                icon: Zap
+            };
+            setAutomations(prev => [...prev, newRule]);
+        }
+
+        setNewAutoData({ name: '', trigger: '', action: '' });
+        setEditingAutoId(null);
+        setIsAutoFormOpen(false);
+    };
+
+    const handleEditAutomation = (id) => {
+        const auto = automations.find(a => a.id === id);
+        if (auto) {
+            setNewAutoData({ name: auto.name, trigger: auto.trigger, action: auto.action });
+            setEditingAutoId(id);
+            setIsAutoFormOpen(true);
+        }
+    };
+
+    const handleDeleteAutomation = (id) => {
+        setAutomations(prev => prev.filter(a => a.id !== id));
+    };
+
+    const toggleAutomation = (id) => {
+        setAutomations(prev => prev.map(auto =>
+            auto.id === id ? { ...auto, active: !auto.active } : auto
+        ));
+    };
+
+    const openCreateAutoModal = () => {
+        setNewAutoData({ name: '', trigger: '', action: '' });
+        setEditingAutoId(null);
+        setIsAutoFormOpen(true);
+    }
+
+    // --- TASK MODAL UPDATE FUNCTIONS ---
+
+    const updateTaskProperty = (taskId, field, value) => {
+        const updatedTasks = tasks.map(t => t.id === taskId ? { ...t, [field]: value } : t);
+        setTasks(updatedTasks);
+
+        // Also update the currently selected task so the modal reflects changes immediately
+        if (selectedTask && selectedTask.id === taskId) {
+            setSelectedTask({ ...selectedTask, [field]: value });
+        }
+    };
+
+    const handleAddTag = (taskId) => {
+        if (!newTagInput.trim()) return;
+        const currentTags = selectedTask?.tags || [];
+        if (!currentTags.includes(newTagInput.trim())) {
+            updateTaskProperty(taskId, 'tags', [...currentTags, newTagInput.trim()]);
+        }
+        setNewTagInput('');
+    };
+
+    const removeTag = (taskId, tagToRemove) => {
+        const currentTags = selectedTask?.tags || [];
+        updateTaskProperty(taskId, 'tags', currentTags.filter(t => t !== tagToRemove));
+    };
+
+    const handleAddComment = (taskId) => {
+        if (!newCommentInput.trim()) return;
+        const newComment = {
+            id: Date.now().toString(),
+            user: 'Tú', // In a real app this comes from auth
+            text: newCommentInput,
+            time: 'Ahora mismo'
+        };
+        const currentComments = selectedTask?.comments || [];
+        updateTaskProperty(taskId, 'comments', [newComment, ...currentComments]);
+        setNewCommentInput('');
+    };
+
+    const getPriorityColor = (p) => {
+        switch (p) {
+            case 'HIGH': return 'text-rose-600 bg-rose-100 dark:bg-rose-900/30 border-rose-200 dark:border-rose-800/30';
+            case 'MEDIUM': return 'text-amber-600 bg-amber-100 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800/30';
+            case 'LOW': return 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800/30';
+            default: return 'text-gray-600 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700/30';
+        }
+    };
+
+    const getScoreColor = (score = 0) => {
+        if (score >= 75) return { color: 'text-rose-500', bg: 'bg-rose-50 dark:bg-rose-900/20', icon: Flame, label: 'HOT' };
+        if (score >= 50) return { color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20', icon: Zap, label: 'WARM' };
+        return { color: 'text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20', icon: Snowflake, label: 'COLD' };
+    };
+
+    // --- RENDER METHODS ---
+    const renderPipeline = () => (
+        <div className="p-4 md:p-6 space-y-6 pb-20">
+
+            {/* Stats Bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 z-5">
+
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                    <DollarSign className="h-6 w-6 text-indigo-500" />
+                    <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Pipeline Total</p>
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">${stats.totalValue.toLocaleString()}</p>
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                    <Briefcase className="h-6 w-6 text-amber-500" />
+                    <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Tratos Activos</p>
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">{stats.openDeals}</p>
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                    <Trophy className="h-6 w-6 text-emerald-500" />
+                    <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Tratos Ganados</p>
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">{stats.totalWon} ({stats.conversionRate} %)</p>
+                    </div>
+                </div>
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                    <BarChart2 className="h-6 w-6 text-rose-500" />
+                    <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Probabilidad Media</p>
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">{Math.round(tasks.reduce((acc, t) => acc + (t.score || 0), 0) / (tasks.length || 1))}%</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Header Toolbar */}
+            <div className="flex flex-col md:flex-row items-center gap-4 bg-white/50 dark:bg-slate-900/50 p-4 rounded-2xl sticky top-0 z-5 border border-gray-100 dark:border-slate-700 backdrop-blur">
+                <div className="relative flex-1 w-full">
+                    <Search className="h-5 w-5 absolute top-1/2 left-4 -translate-y-1/2 text-gray-400" />
                     <input
                         type="text"
-                        placeholder="Buscar SKU, producto o ubicación..."
-                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        placeholder="Buscar tratos por título o cliente..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur border border-gray-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                     />
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <button className="p-2 border border-gray-200 dark:border-slate-700 text-gray-500 dark:text-gray-400 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors" title="Filtrar">
-                        <Filter className="h-5 w-5" />
-                    </button>
+                {/* Filters */}
+                <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Prioridad:</span>
+                    <button onClick={() => setFilterPriority('ALL')} className={`px-3 py-2 rounded-lg text-xs font-bold transition-colors ${filterPriority === 'ALL' ? 'bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-white' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700/50'}`}>Todos</button>
+                    <button onClick={() => setFilterPriority('HIGH')} className={`px-3 py-2 rounded-lg text-xs font-bold transition-colors ${filterPriority === 'HIGH' ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-600' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700/50'}`}>Alta Prio</button>
+                    <button onClick={() => setFilterPriority('MEDIUM')} className={`px-3 py-2 rounded-lg text-xs font-bold transition-colors ${filterPriority === 'MEDIUM' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700/50'}`}>Media Prio</button>
+                    <button onClick={() => setFilterPriority('LOW')} className={`px-3 py-2 rounded-lg text-xs font-bold transition-colors ${filterPriority === 'LOW' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700/50'}`}>Baja Prio</button>
+                </div>
+
+                <button
+                    onClick={() => setIsFormOpen(true)}
+                    className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 transition-all hover:-translate-y-0.5 active:scale-95"
+                >
+                    <Plus className="h-5 w-5" />
+                    Nuevo Trato
+                </button>
+            </div>
+
+
+            {/* Kanban Board */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 h-full">
+                {
+                    COLUMNS.map(col => {
+                        const colTasks = filteredTasks.filter(t => t.status === col.id);
+                        return (
+                            <div key={col.id} className={`p-4 rounded-3xl min-h-[500px] ${col.color} space-y-4`}>
+                                {/* Column Header */}
+                                <div className="flex items-center justify-between sticky top-4 bg-transparent backdrop-blur-sm pt-2 pb-1">
+                                    <h3 className="text-lg font-bold flex items-center gap-2 text-gray-900 dark:text-white">
+                                        <div className={`w-3 h-3 rounded-full ${col.dot}`}></div>
+                                        {col.title}
+                                        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">({colTasks.length})</span>
+                                    </h3>
+                                    <MoreHorizontal
+                                        onClick={() => alert(`Opciones para columna: ${col.title}\n\nAcciones disponibles:\n- Cambiar color de columna\n- Configurar límite de tareas\n- Automatizaciones\n- Exportar datos`)}
+                                        className="h-5 w-5 text-gray-400 cursor-pointer hover:text-gray-600 transition-colors"
+                                    />
+                                </div>
+
+                                {/* Empty State */}
+                                {
+                                    colTasks.length === 0 && (
+                                        <div className="p-4 border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-xl text-center text-gray-500 dark:text-gray-400">
+                                            <Archive className="h-6 w-6 mx-auto mb-2" />
+                                            Sin tratos
+                                        </div>
+                                    )
+                                }
+
+                                {/* Task Cards */}
+                                <div className="space-y-4">
+                                    {
+                                        colTasks.map(task => {
+                                            const scoreStyle = getScoreColor(task.score);
+                                            const ScoreIcon = scoreStyle.icon;
+                                            return (
+                                                <div
+                                                    key={task.id}
+                                                    onClick={() => setSelectedDeal(task)}
+                                                    className="cursor-pointer group bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 hover:shadow-lg hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:-translate-y-1 transition-all duration-200 relative"
+                                                >
+                                                    {/* Top Bar: Priority & Score */}
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${getPriorityColor(task.priority)}`}>
+                                                            {task.priority === 'HIGH' ? 'Alta' : task.priority === 'MEDIUM' ? 'Media' : 'Baja'}
+                                                        </span>
+                                                        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${scoreStyle.color} ${scoreStyle.bg}`}>
+                                                            <ScoreIcon className="h-3 w-3" />
+                                                            <span>{task.score || 0} %</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <h4 className="text-md font-bold mb-1 text-gray-900 dark:text-white">{task.title}</h4>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                                                        <Building className="h-3 w-3" />
+                                                        {task.client || 'Sin cliente'}
+                                                    </p>
+
+                                                    {/* Custom Action for Done Column */}
+                                                    {
+                                                        col.id === 'DONE' && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleMoveToWon(task.id);
+                                                                }}
+                                                                className="w-full my-3 py-2 bg-emerald-500 text-white text-sm font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition-all hover:scale-105"
+                                                            >
+                                                                <Trophy className="h-4 w-4" />
+                                                                🎉 Cerrar y Archivar
+                                                            </button>
+                                                        )
+                                                    }
+
+                                                    {/* Footer Info */}
+                                                    <div className="mt-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                                                        <div className="flex items-center gap-2">
+                                                            <DollarSign className="h-3 w-3" />
+                                                            Valor{task.dealValue ? `$${task.dealValue.toLocaleString()}` : '-'}
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <MessageSquare className="h-3 w-3" />
+                                                            {task.comments && task.comments.length > 0 && <span>({task.comments.length})</span>}
+                                                            <User className="h-3 w-3" />
+                                                            {task.assignee}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    }
+                                </div>
+                            </div>
+                        );
+                    })
+                }
+            </div>
+        </div>
+    );
+
+    const renderWonClients = () => {
+        const totalWonValue = wonDeals.reduce((acc, t) => acc + (t.dealValue || 0), 0);
+
+        return (
+            <div className="p-6 space-y-8">
+                {/* Header Hero */}
+                <div className="bg-emerald-50 dark:bg-emerald-900/10 p-8 rounded-3xl flex flex-col md:flex-row justify-between items-start border border-emerald-200 dark:border-emerald-900">
+                    <div>
+                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                            <Trophy className="h-7 w-7 text-emerald-600" />
+                            Clientes Ganados
+                        </h2>
+                        <p className="text-gray-600 dark:text-gray-400">Celebra tus victorias y gestiona tus relaciones a largo plazo.</p>
+                    </div>
+                    <div className="mt-4 md:mt-0 text-right">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Valor Total Ganado</p>
+                        <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">${totalWonValue.toLocaleString()}</p>
+                    </div>
+                </div>
+
+                {/* Won Deals Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {wonDeals.length === 0 ? (
+                        <div className="lg:col-span-3 p-12 text-center bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 space-y-3">
+                            <Star className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto" />
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Aún no hay clientes ganados</h3>
+                            <p className="text-gray-500 dark:text-gray-400">Mueve tratos desde la columna "Ganado" del tablero para verlos aquí.</p>
+                        </div>
+                    ) : (
+                        wonDeals.map(deal => (
+                            <div key={deal.id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 space-y-4 relative overflow-hidden">
+
+                                <div className="absolute top-0 right-0 p-3 bg-emerald-500 rounded-bl-xl text-white text-xs font-bold flex flex-col items-center">
+                                    <DollarSign className="h-4 w-4" />
+                                    <span className="text-lg leading-none mt-1">${deal.dealValue?.toLocaleString()}</span>
+                                    <span className="text-[10px] opacity-70">Valor Anual</span>
+                                </div>
+
+
+                                <div>
+                                    <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xl font-bold flex items-center justify-center mb-3">
+                                        {deal.client?.charAt(0) || 'C'}
+                                    </div>
+                                    <h4 className="text-lg font-bold text-gray-900 dark:text-white">{deal.client}</h4>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">{deal.title}</p>
+                                </div>
+
+                                {/* Tags */}
+                                <div className="flex flex-wrap gap-2">
+                                    {
+                                        deal.tags.map(tag => (
+                                            <span key={tag} className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300">
+                                                <Tag className="h-3 w-3 inline mr-1" />
+                                                {tag}
+                                            </span>
+                                        ))
+                                    }
+                                </div>
+
+                                {/* Footer */}
+                                <div className="pt-4 border-t border-gray-100 dark:border-slate-700 flex justify-between items-center text-sm text-gray-500 dark:text-gray-400">
+                                    <div className="flex items-center gap-1">
+                                        <Calendar className="h-4 w-4" />
+                                        <span>Ganado: {deal.dueDate}</span>
+                                    </div>
+                                    <CheckCircle2 className="h-5 w-5 text-emerald-500" title="Archivado" />
+                                </div>
+
+                                {/* Celebration Icon Overlay */}
+                                {showCelebration && (
+                                    <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-20">
+                                        <Trophy className="h-16 w-16 text-emerald-500 animate-bounce" />
+                                    </div>
+                                )}
+                            </div>
+                        ))
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    const renderContacts = () => (
+        <div className="p-4 md:p-6 space-y-6">
+
+            <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Directorio de Contactos</h2>
+                <div className="flex items-center gap-2">
                     <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 shadow-lg shadow-blue-500/30"
+                        onClick={() => setIsNewContactModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
                     >
                         <Plus className="h-4 w-4" />
-                        Nuevo Producto
+                        Nuevo Contacto
+                    </button>
+                    <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-xl text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+                        <Database className="h-4 w-4" />
+                        Exportar CSV
                     </button>
                 </div>
             </div>
 
-            {/* Inventory Table */}
-            <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700 bg-white dark:bg-slate-800 rounded-xl shadow-sm">
+            <div className="w-full overflow-x-auto bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
                     <thead className="bg-gray-50 dark:bg-slate-700">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Producto</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Stock</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nombre</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Empresa</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ubicación</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ajuste Rápido</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Soporte</th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
-                        {inventory.map((item) => (
-                            <tr key={item.sku} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+                        {contacts.map(contact => (
+                            <tr
+                                key={contact.id}
+                                onClick={() => setSelectedContact({
+                                    firstName: contact.name.split(' ')[0],
+                                    lastName: contact.name.split(' ').slice(1).join(' '),
+                                    email: contact.email,
+                                    company: contact.company,
+                                    position: contact.role,
+                                    status: contact.status,
+                                    score: Math.floor(Math.random() * 50) + 50,
+                                    notes: []
+                                })}
+                                className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+                            >
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <p className="font-semibold text-gray-900 dark:text-white">{item.name}</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">{item.sku}</p>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 text-xs font-bold flex items-center justify-center">
+                                            {contact.name.charAt(0)}{contact.name.split(' ')[1].charAt(0)}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-white">{contact.name}</p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">{contact.email}</p>
+                                        </div>
+                                    </div>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{item.stock}</td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${item.status === 'In Stock' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                                        item.status === 'Low Stock' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                                            'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white">{contact.company}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{contact.role}</p>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${contact.status === 'Cliente'
+                                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                        : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                                         }`}>
-                                        {item.status}
+                                        {contact.status}
                                     </span>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{item.location}</td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    {contact.tickets > 0 ? (
+                                        <span className="flex items-center gap-1 text-sm font-medium text-rose-500">
+                                            <AlertCircle className="h-4 w-4" />
+                                            {contact.tickets} Tickets
+                                        </span>
+                                    ) : (
+                                        <span className="flex items-center gap-1 text-sm text-emerald-500">
+                                            <Check className="h-4 w-4" />
+                                            Al día
+                                        </span>
+                                    )}
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => updateStock(item.sku, -1)}
-                                            className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 rounded"
-                                        >
-                                            <Minus className="h-4 w-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => updateStock(item.sku, 1)}
-                                            className="p-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-emerald-600 rounded"
-                                        >
-                                            <Plus className="h-4 w-4" />
-                                        </button>
-                                    </div>
+                                    <button
+                                        onClick={() => window.location.href = `mailto:${contact.email}?subject=Contacto desde CRM Boosted`}
+                                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors"
+                                        title="Enviar email"
+                                    >
+                                        <Mail className="h-5 w-5" />
+                                    </button>
+                                    <button
+                                        onClick={() => alert(`Acciones para ${contact.name}:\n\n- Ver historial completo\n- Asignar tarea\n- Crear nota\n- Programar llamada\n- Ver documentos\n- Eliminar contacto`)}
+                                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700/50 ml-2 transition-colors"
+                                        title="Más opciones"
+                                    >
+                                        <MoreHorizontal className="h-5 w-5" />
+                                    </button>
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
-
-            {/* Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-lg w-full">
-
-                        <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Nuevo Producto</h2>
-                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                                <X className="h-6 w-6" />
-                            </button>
-                        </div>
-
-                        <div className="p-6 space-y-4">
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre del Producto</label>
-                                <input
-                                    type="text"
-                                    value={newItem.name}
-                                    onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                                    className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stock Inicial</label>
-                                    <input
-                                        type="number"
-                                        value={newItem.stock}
-                                        onChange={(e) => setNewItem({ ...newItem, stock: e.target.value })}
-                                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Stock Mínimo</label>
-                                    <input
-                                        type="number"
-                                        value={newItem.min}
-                                        onChange={(e) => setNewItem({ ...newItem, min: e.target.value })}
-                                        className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ubicación</label>
-                                <input
-                                    type="text"
-                                    value={newItem.location}
-                                    onChange={(e) => setNewItem({ ...newItem, location: e.target.value })}
-                                    className="w-full px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-
-                            <button
-                                onClick={handleAddItem}
-                                className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30"
-                            >
-                                Guardar Producto
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
-};
 
-const AutomationModule = () => {
-    const [workflows, setWorkflows] = useState(initialWorkflows);
-    const [credentials] = useState(initialCredentials); // No se modifica, por eso no se usa setCredentials
-    const [activeTab, setActiveTab] = useState('DASHBOARD');
-    const [logsOpen, setLogsOpen] = useState(null);
-    const [executingId, setExecutingId] = useState(null);
-    const [testPayload, setTestPayload] = useState('{\n  "event": "new_order",\n  "data": {\n    "id": 123,\n    "amount": 99.00\n  }\n}');
-    const [testResponse, setTestResponse] = useState(null);
+    const renderCompanies = () => {
+        return (
+            <div className="p-4 md:p-6 space-y-6">
+                <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Empresas y Cuentas</h2>
+                    <button
+                        onClick={() => setIsNewCompanyModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Nueva Empresa
+                    </button>
+                </div>
 
-    const toggleStatus = (id) => {
-        setWorkflows(workflows.map(wf => {
-            if (wf.id === id) {
-                return { ...wf, status: wf.status === 'Active' ? 'Inactive' : 'Active' };
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {companies.map(company => {
+                        const companyDeals = tasks.filter(t => t.client === company.name);
+                        const companyContacts = contacts.filter(c => c.company === company.name);
+                        const wonDeals = companyDeals.filter(d => d.status === 'DONE');
+                        const totalRevenue = wonDeals.reduce((sum, d) => sum + (d.dealValue || 0), 0);
+                        const activeDeals = companyDeals.filter(d => d.status !== 'DONE');
+
+                        const getStatusColor = (status) => {
+                            switch (status) {
+                                case 'Cliente': return 'bg-emerald-500';
+                                case 'Prospecto': return 'bg-blue-500';
+                                case 'Ex-cliente': return 'bg-gray-500';
+                                default: return 'bg-gray-500';
+                            }
+                        };
+
+                        return (
+                            <div
+                                key={company.id}
+                                onClick={() => setSelectedCompany(company)}
+                                className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 hover:shadow-xl hover:border-blue-200 dark:hover:border-blue-500/30 hover:-translate-y-1 transition-all cursor-pointer"
+                            >
+                                <div className="flex items-start gap-4 mb-4">
+                                    <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                                        {company.logo}
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="font-bold text-lg text-gray-900 dark:text-white truncate">{company.name}</h3>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">{company.industry}</p>
+                                        <span className={`inline-block mt-2 px-2 py-0.5 rounded-full text-xs font-bold text-white ${getStatusColor(company.relationshipStatus)}`}>
+                                            {company.relationshipStatus}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 mb-4">
+                                    <div className="bg-gray-50 dark:bg-slate-900/50 p-3 rounded-xl">
+                                        <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-xs mb-1">
+                                            <DollarSign className="h-3 w-3" />
+                                            <span>Ingresos</span>
+                                        </div>
+                                        <p className="font-bold text-gray-900 dark:text-white">${totalRevenue.toLocaleString()}</p>
+                                    </div>
+                                    <div className="bg-gray-50 dark:bg-slate-900/50 p-3 rounded-xl">
+                                        <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400 text-xs mb-1">
+                                            <Briefcase className="h-3 w-3" />
+                                            <span>Tratos</span>
+                                        </div>
+                                        <p className="font-bold text-gray-900 dark:text-white">{activeDeals.length} activos</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 pt-3 border-t border-gray-100 dark:border-slate-700">
+                                    <div className="flex items-center gap-1">
+                                        <Users className="h-4 w-4" />
+                                        <span>{companyContacts.length} contactos</span>
+                                    </div>
+                                    {company.website && (
+                                        <div className="flex items-center gap-1">
+                                            <Globe className="h-4 w-4" />
+                                            <span className="truncate max-w-[100px]">{company.website.replace('https://', '')}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {companies.length === 0 && (
+                    <div className="text-center py-12 bg-gray-50 dark:bg-slate-900/50 rounded-2xl">
+                        <Building className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500 dark:text-gray-400 text-lg">No hay empresas registradas</p>
+                        <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors">
+                            Agregar primera empresa
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    const renderReports = () => {
+        const reportData = {
+            S1: {
+                data: [45, 70, 35, 90, 55, 80],
+                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun']
+            },
+            S2: {
+                data: [65, 45, 85, 60, 95, 70],
+                labels: ['Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
             }
-            return wf;
-        }));
+        };
+
+        return (
+            <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 space-y-4">
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Ingresos Mensuales</h3>
+                        <select
+                            value={reportPeriod}
+                            onChange={(e) => setReportPeriod(e.target.value)}
+                            className="bg-gray-50 dark:bg-slate-700 border-none rounded-lg text-xs font-bold p-2 focus:outline-none text-gray-600 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors"
+                        >
+                            <option value="S1">1er Semestre</option>
+                            <option value="S2">2do Semestre</option>
+                        </select>
+                    </div>
+
+                    <div className="h-80 flex items-end justify-around border-b border-gray-200 dark:border-slate-700 pb-2 relative">
+                        {reportData[reportPeriod].data.map((h, i) => (
+                            <div key={i} className="w-10 h-full flex items-end relative group cursor-pointer">
+                                <div
+                                    className="absolute bottom-0 left-0 right-0 bg-indigo-500 rounded-t-lg transition-all duration-500 group-hover:bg-indigo-400"
+                                    style={{ height: `${h}%` }}
+                                ></div>
+                                <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full text-xs font-bold text-gray-700 dark:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    ${h}k
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex justify-around text-xs text-gray-500 dark:text-gray-400 pt-2">
+                        {reportData[reportPeriod].labels.map((l) => (
+                            <span key={l}>{l}</span>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 space-y-4">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">Fuentes de Leads</h3>
+                    <div className="flex flex-col items-center">
+                        {/* Dynamic Pie Chart visualization */}
+                        <div className="w-32 h-32 rounded-full my-4 relative"
+                            style={{
+                                background: `conic-gradient(
+                                    #ef4444 0% 45%,      /* LinkedIn */
+                                    #f59e0b 45% 70%,     /* Referidos */
+                                    #10b981 70% 85%,     /* Web */
+                                    #3b82f6 85% 100%     /* Eventos */
+                                )`
+                            }}
+                        >
+                            <div className="absolute inset-4 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center">
+                                <span className="text-2xl font-bold text-gray-900 dark:text-white">142</span>
+                            </div>
+                        </div>
+                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Leads</p>
+                    </div>
+
+                    <div className="space-y-2">
+                        <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300"><div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-full"></div>LinkedIn</div><span>(45%)</span></div>
+                        <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300"><div className="flex items-center gap-2"><div className="w-3 h-3 bg-amber-500 rounded-full"></div>Referidos</div><span>(25%)</span></div>
+                        <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300"><div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-500 rounded-full"></div>Web</div><span>(15%)</span></div>
+                        <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300"><div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-500 rounded-full"></div>Eventos</div><span>(15%)</span></div>
+                    </div>
+                </div>
+            </div>
+        );
     };
 
-    const runWorkflow = (id) => {
-        setExecutingId(id);
-        setTimeout(() => {
-            setWorkflows(workflows.map(wf => {
-                if (wf.id === id) {
-                    return {
-                        ...wf,
-                        lastRun: 'Just now',
-                        totalRuns: wf.totalRuns + 1,
-                        status: 'Active'
-                    };
-                }
-                return wf;
-            }));
-            setExecutingId(null);
-        }, 2000);
-    };
-
-    const handleTestWebhook = () => {
-        setTestResponse('Sending...');
-        setTimeout(() => {
-            setTestResponse('{\n  "status": "success",\n  "message": "Workflow triggered successfully",\n  "executionId": "exec_88293"\n}');
-        }, 1500);
-    };
-
-    const activeCount = workflows.filter(w => w.status === 'Active').length;
-    const errorCount = workflows.filter(w => w.status === 'Error').length;
-    const totalExecutions = workflows.reduce((acc, curr) => acc + curr.totalRuns, 0);
-
-    return (
+    const renderAutomation = () => (
         <div className="p-6 space-y-6">
 
-            {/* Automation Navigation */}
-            <div className="flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2 overflow-x-auto">
-                {[
-                    { id: 'DASHBOARD', label: 'Dashboard', icon: Activity },
-                    { id: 'CREDENTIALS', label: 'Credenciales', icon: Key },
-                    { id: 'TESTER', label: 'Webhook Tester', icon: Zap },
-                ].map(tab => {
-                    const Icon = tab.icon;
+            <div className="flex justify-between items-center">
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Flujos de Trabajo</h2>
+                    <p className="text-gray-600 dark:text-gray-400">Automatiza tareas para ahorrar tiempo.</p>
+                </div>
+                <button
+                    onClick={openCreateAutoModal}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/30"
+                >
+                    <Plus className="h-4 w-4" />
+                    Nueva Regla
+                </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {automations.map(auto => {
+                    const Icon = auto.icon || Zap;
                     return (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id
-                                ? 'bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400'
-                                : 'text-gray-500 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-slate-800'
-                                }`}
-                        >
-                            <Icon className="h-4 w-4" />
-                            {tab.label}
-                        </button>
-                    )
+                        <div
+                            key={auto.id}
+                            onClick={() => handleEditAutomation(auto.id)}
+                            className={`group p-6 rounded-3xl border transition-all flex items-center gap-5 cursor-pointer ${auto.active
+                                ? 'bg-gray-50 dark:bg-slate-800 border-indigo-100 dark:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-400/50'
+                                : 'bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-700 opacity-70 hover:opacity-100 hover:border-gray-300 dark:hover:border-slate-600'
+                                }`}>
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors shrink-0 ${auto.active
+                                ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'
+                                : 'bg-gray-100 text-gray-400 dark:bg-slate-800 dark:text-gray-500'
+                                }`}>
+                                <Icon className="h-7 w-7" />
+                            </div>
+
+                            <div className="flex-1 space-y-1 min-w-0">
+                                <p className="text-lg font-bold text-gray-900 dark:text-white truncate">{auto.name}</p>
+                                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">SI: {auto.trigger}</p>
+                                <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 truncate">HACER: {auto.action}</p>
+                            </div>
+
+                            {/* Controls */}
+                            <div className="flex items-center gap-2 shrink-0">
+                                {/* Toggle Switch */}
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleAutomation(auto.id);
+                                    }}
+                                    className={`w-10 h-6 rounded-full p-1 transition-colors duration-300 shrink-0 focus:outline-none ${auto.active ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-slate-700'}`}
+                                >
+                                    <span className={`block w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${auto.active ? 'translate-x-4' : 'translate-x-0'}`} />
+                                </button>
+
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleEditAutomation(auto.id);
+                                        }}
+                                        className="p-1.5 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                                        title="Editar"
+                                    >
+                                        <Pencil className="h-5 w-5" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteAutomation(auto.id);
+                                        }}
+                                        className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
+                                        title="Eliminar"
+                                    >
+                                        <Trash2 className="h-5 w-5" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    );
                 })}
-            </div>
 
-            {activeTab === 'DASHBOARD' && (
-                <div className="space-y-6">
-                    {/* Header Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-
-                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <Activity className="h-5 w-5 text-orange-500" />
-                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Workflows Activos</span>
-                            </div>
-                            <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                                {activeCount}/{workflows.length}
-                            </div>
-                            <div className="text-sm text-emerald-500 flex items-center gap-1">
-                                <CheckCircle className="h-4 w-4" />
-                                System Operational
-                            </div>
-                        </div>
-
-
-                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <Play className="h-5 w-5 text-indigo-500" />
-                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Ejecuciones Totales</span>
-                            </div>
-                            <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                                {totalExecutions.toLocaleString()}
-                            </div>
-                            <div className="text-sm text-gray-500 flex items-center gap-1">
-                                <ArrowUpRight className="h-4 w-4 text-emerald-500" />
-                                +124 hoy
-                            </div>
-                        </div>
-
-
-                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <AlertCircle className={`h-5 w-5 ${errorCount > 0 ? 'text-red-500' : 'text-emerald-500'}`} />
-                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Tasa de Error</span>
-                            </div>
-                            <div className={`text-3xl font-bold ${errorCount > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
-                                {((errorCount / workflows.length) * 100).toFixed(1)}%
-                            </div>
-                            <div className={`text-sm ${errorCount > 0 ? 'text-red-500' : 'text-gray-300'} flex items-center gap-1`}>
-                                <AlertTriangle className="h-4 w-4" />
-                                {errorCount} workflows fallando
-                            </div>
-                        </div>
-
-
-                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 space-y-4">
-                            <div className="flex items-center justify-between">
-                                <Clock className="h-5 w-5 text-rose-500" />
-                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Horas de Proceso</span>
-                            </div>
-                            <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                                142h
-                            </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                                <RotateCw className="h-4 w-4" />
-                                Este mes
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Workflows List */}
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
-
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Mis Automatizaciones (n8n)</h3>
-                            <button className="flex items-center gap-2 px-3 py-1 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700">
-                                <Plus className="h-4 w-4" />
-                                Nuevo Workflow
-                            </button>
-                        </div>
-
-
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
-                                <thead className="bg-white dark:bg-slate-800">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Workflow</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Trigger</th>
-                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nodos</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Estado</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Última Ejecución</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Éxito</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
-                                    {workflows.map((wf) => (
-                                        <tr key={wf.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <p className="font-semibold text-gray-900 dark:text-white">{wf.name}</p>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400">{wf.id}</p>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                                                    {wf.trigger}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 dark:text-gray-400">
-                                                <div className="flex items-center justify-center gap-1">
-                                                    <GitBranch className="h-4 w-4" />
-                                                    {wf.nodes}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <button
-                                                    onClick={() => toggleStatus(wf.id)}
-                                                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${wf.status === 'Active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-200' :
-                                                        wf.status === 'Error' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200' :
-                                                            'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-gray-400 hover:bg-gray-200'
-                                                        }`}
-                                                >
-                                                    {wf.status === 'Active' ? <Zap className="h-3 w-3 inline mr-1" /> : wf.status === 'Error' ? <AlertTriangle className="h-3 w-3 inline mr-1" /> : <PauseCircle className="h-3 w-3 inline mr-1" />}
-                                                    {wf.status}
-                                                </button>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                                <div className="flex items-center gap-1">
-                                                    <Clock className="h-4 w-4" />
-                                                    {wf.lastRun}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="w-20 h-4 bg-gray-200 dark:bg-slate-700 rounded-full relative">
-                                                    <div
-                                                        className={`h-full rounded-full ${wf.successRate > 90 ? 'bg-emerald-500' :
-                                                            wf.successRate > 70 ? 'bg-amber-500' : 'bg-red-500'
-                                                            }`}
-                                                        style={{ width: `${wf.successRate}%` }}
-                                                    ></div>
-                                                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-gray-900 dark:text-white mix-blend-difference">
-                                                        {wf.successRate}%
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <button
-                                                        onClick={() => runWorkflow(wf.id)}
-                                                        disabled={executingId === wf.id}
-                                                        className={`p-2 rounded-lg transition-colors ${executingId === wf.id
-                                                            ? 'bg-orange-100 text-orange-600 animate-pulse'
-                                                            : 'hover:bg-orange-50 text-gray-400 hover:text-orange-600 dark:hover:bg-orange-900/20'
-                                                            }`}
-                                                        title="Ejecutar Ahora"
-                                                    >
-                                                        {executingId === wf.id ? <RotateCw className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />}
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setLogsOpen(wf.id)}
-                                                        className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                                                        title="Ver Logs"
-                                                    >
-                                                        <Terminal className="h-5 w-5" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {activeTab === 'CREDENTIALS' && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                    <div className="lg:col-span-2 space-y-4">
-                        <div className="flex justify-between items-center">
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Credenciales Activas</h3>
-                            <button className="flex items-center gap-2 px-3 py-1 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
-                                <Plus className="h-4 w-4" /> Nueva Credencial
-                            </button>
-                        </div>
-                        <div className="space-y-4">
-                            {credentials.map(cred => (
-                                <div key={cred.id} className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-between">
-
-                                    <div className="flex items-center gap-4">
-                                        <div className="p-2 bg-gray-100 dark:bg-slate-700 rounded-lg text-gray-600 dark:text-gray-400">
-                                            <Key className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold text-gray-900 dark:text-white">{cred.name}</p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">{cred.service} • Last used {cred.lastUsed}</p>
-                                        </div>
-                                    </div>
-                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${cred.status === 'Connected' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
-                                        'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                        }`}>
-                                        {cred.status}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 space-y-4">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Seguridad</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Toda credenciales están encriptad AES-256 antes de ser almacenadas. Nunca compartimos tus claves API con terceros.</p>
-                        <div className="space-y-3 pt-2">
-
-                            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
-                                <Lock className="h-4 w-4" />
-                                Encriptación en reposo activa
-                            </div>
-
-                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm font-medium">
-                                <RotateCw className="h-4 w-4" />
-                                Rotación de claves cada 90 dí logs habilitados
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {activeTab === 'TESTER' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[70vh]">
-
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex flex-col">
-
-                        <div className="p-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
-                            <h3 className="font-semibold text-gray-900 dark:text-white">Request Payload</h3>
-
-                            <div className="flex items-center gap-1 text-xs font-medium bg-gray-100 dark:bg-slate-700 p-1 rounded-lg">
-                                <span className="px-2 py-1 bg-green-500 text-white rounded-md">POST</span>
-                                <span className="px-2 py-1 text-gray-500 dark:text-gray-400">GET</span>
-                                <span className="px-2 py-1 text-gray-500 dark:text-gray-400">PUT</span>
-                            </div>
-                        </div>
-
-                        <textarea
-                            value={testPayload}
-                            onChange={(e) => setTestPayload(e.target.value)}
-                            className="flex-1 w-full p-4 font-mono text-sm bg-slate-50 dark:bg-slate-900 text-gray-800 dark:text-gray-200 resize-none focus:outline-none rounded-b-2xl"
-                        />
-
-                        <div className="p-4 border-t border-gray-100 dark:border-slate-700">
-                            <button
-                                onClick={handleTestWebhook}
-                                className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-                            >
-                                <Zap className="h-5 w-5" />
-                                Enviar Test
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex flex-col">
-
-                        <div className="p-4 border-b border-gray-100 dark:border-slate-700">
-                            <h3 className="font-semibold text-gray-900 dark:text-white">Response</h3>
-                        </div>
-
-                        <div className="flex-1 p-4 font-mono text-sm overflow-auto bg-slate-50 dark:bg-slate-900 text-gray-800 dark:text-gray-200 rounded-b-2xl">
-                            {testResponse ? (
-                                <pre className="whitespace-pre-wrap">{testResponse}</pre>
-                            ) : (
-                                <p className="text-gray-500 dark:text-gray-400 italic">Esperando solicitud...</p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Logs Modal (Shared) */}
-            {logsOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
-
-                        <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Logs de Ejecución: {logsOpen}</h2>
-                            <button onClick={() => setLogsOpen(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                                <X className="h-6 w-6" />
-                            </button>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto p-6 space-y-3 font-mono text-xs">
-                            {[1, 2, 3, 4, 5].map(i => (
-                                <div key={i} className={`p-3 rounded-lg ${i === 2 ? 'bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-800' : 'bg-gray-50 dark:bg-slate-800'}`}>
-
-                                    <div className="text-gray-500 dark:text-gray-400 mb-1">
-                                        2024-03-15 14:3{i}:22
-                                    </div>
-
-                                    <p className={`font-medium ${i === 2 ? 'text-red-700 dark:text-red-400' : 'text-gray-800 dark:text-gray-200'}`}>
-                                        {i === 2 ? (
-                                            <>
-                                                Error: API rate limit exceeded. Retrying in 60s...
-                                                <span className="block text-xs italic text-red-500 dark:text-red-300">at Node "HTTP Request" (line 42)</span>
-                                            </>
-                                        ) : (
-                                            'Workflow executed successfully. 4 items processed.'
-                                        )}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="p-4 border-t border-gray-100 dark:border-slate-700 flex justify-end">
-                            <button
-                                onClick={() => setLogsOpen(null)}
-                                className="px-4 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-slate-600"
-                            >
-                                Cerrar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
-
-// --- Main Component ---
-
-const ERPView = () => {
-    const [activeModule, setActiveModule] = useState('FINANCE');
-
-    const modules = [
-        { id: 'FINANCE', label: 'Finanzas', icon: DollarSign, color: 'emerald' },
-        { id: 'SCM', label: 'Inventario (SCM)', icon: Package, color: 'blue' },
-        { id: 'AUTOMATION', label: 'Automatizaciones', icon: Workflow, color: 'orange' },
-        { id: 'CRM', label: 'Ventas (CRM)', icon: Briefcase, color: 'amber' },
-        { id: 'HR', label: 'Recursos Humanos', icon: Users, color: 'rose' },
-    ];
-
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-    const toggleSidebar = () => {
-        setSidebarCollapsed(!sidebarCollapsed);
-    };
-    // NOTE: Los componentes CRMView y UsersView no se proporcionaron.
-    // En este código se están reemplazando por un marcador de posición.
-    // Si los tienes, descomenta los imports y úsalos en lugar de los marcadores de posición.
-    const CRMView = () => (
-        <div className="p-6">
-            <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-2xl p-8 text-center">
-                <Briefcase className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Módulo de Ventas (CRM)</h3>
-                <p className="text-gray-500 dark:text-gray-400">Este módulo utiliza la vista CRM completa. Por favor navega a la sección CRM en el menú principal.</p>
+                <button
+                    onClick={openCreateAutoModal}
+                    className="group border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-3xl p-6 flex flex-col items-center justify-center text-gray-400 hover:border-indigo-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-all min-h-[140px]"
+                >
+                    <Plus className="h-8 w-8 mb-2 group-hover:scale-110 transition-transform" />
+                    Crear Nueva Regla
+                </button>
             </div>
         </div>
     );
 
-    const UsersView = () => (
-        <div className="p-6">
-            <div className="bg-rose-50 dark:bg-rose-900/10 border border-rose-200 dark:border-rose-800 rounded-2xl p-8 text-center">
-                <Users className="h-12 w-12 text-rose-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Módulo de Recursos Humanos</h3>
-                <p className="text-gray-500 dark:text-gray-400">Este módulo utiliza la vista de Usuarios completa. Por favor navega a la sección Usuarios en el menú principal.</p>
+    const renderIntegrations = () => (
+        <div className="p-6 space-y-6">
+
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Integraciones</h2>
+                    <p className="text-gray-600 dark:text-gray-400">Conecta tus herramientas.</p>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {integrations.map(integ => {
+                    const Icon = integ.icon;
+                    return (
+                        <div key={integ.id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 space-y-4 flex flex-col">
+
+                            <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${integ.color}`}>
+                                    <Icon className="h-5 w-5" />
+                                </div>
+                                <h3 className="font-bold text-lg text-gray-900 dark:text-white">{integ.name}</h3>
+                            </div>
+
+                            <p className="text-sm text-gray-500 dark:text-gray-400 flex-1">{integ.desc}</p>
+
+                            <button
+                                onClick={() => {
+                                    const newStatus = !integ.connected;
+                                    setIntegrations(prev => prev.map(item =>
+                                        item.id === integ.id ? { ...item, connected: newStatus } : item
+                                    ));
+                                    alert(newStatus
+                                        ? `✅ ${integ.name} conectado exitosamente!\n\n${integ.desc}`
+                                        : `❌ ${integ.name} desconectado.`
+                                    );
+                                }}
+                                className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all hover:scale-105 active:scale-95 ${integ.connected
+                                    ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/30 hover:bg-emerald-100'
+                                    : 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-600 hover:bg-indigo-100'
+                                    }`}>
+                                {integ.connected ? '✓ Conectado' : '+ Conectar'}
+                            </button>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );
 
     return (
-        <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-200">
-            {/* Sidebar Lateral */}
-            <Sidebar isCollapsed={sidebarCollapsed} onToggleCollapse={toggleSidebar} />
-
-            {/* Contenedor Principal */}
-            <div className="flex flex-col flex-1 h-full relative transition-all duration-300">
-                
-                {/* ERP Header & Navigation (Fijo arriba) */}
-                <div className="border-b border-slate-800 bg-slate-950 p-6 z-10">
-                    
-                    {/* Título y Estado */}
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-indigo-500/10 rounded-xl">
-                                <Factory className="h-6 w-6 text-indigo-400" />
-                            </div>
-                            <div>
-                                <h1 className="text-2xl font-bold text-white">Sistema ERP Integral</h1>
-                                <p className="text-sm text-slate-400">Gestión centralizada de recursos empresariales</p>
-                            </div>
-                        </div>
-                        
-                        {/* Badge de Estado */}
-                        <div className="flex items-center gap-2">
-                            <div className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full text-xs font-bold flex items-center gap-2">
-                                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                                Sistema Operativo
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Pestañas de Módulos (Tabs) */}
-                    <div className="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar">
-                        {modules.map((module) => {
-                            const Icon = module.icon;
-                            const isActive = activeModule === module.id;
-                            
-                            // Lógica dinámica de colores para el botón activo vs inactivo
+        <div className="flex flex-col h-full w-full">
+            <div className="h-full flex flex-col bg-gray-50 dark:bg-slate-900">
+                {/* Header Navigation */}
+                <div className="p-4 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 sticky top-0 z-5">
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                        {[
+                            { id: 'PIPELINE', label: 'Tablero', icon: Layout },
+                            { id: 'WON', label: 'Ganados', icon: Trophy },
+                            { id: 'CONTACTS', label: 'Clientes', icon: Users },
+                            { id: 'COMPANIES', label: 'Empresas', icon: Building },
+                            { id: 'REPORTS', label: 'Reportes', icon: TrendingUp },
+                            { id: 'LAUNCHPAD', label: 'Launchpad', icon: Rocket },
+                            { id: 'AUTOMATION', label: 'Automatización', icon: Zap },
+                            { id: 'INTEGRATIONS', label: 'Apps', icon: Puzzle },
+                        ].map((tab) => {
+                            const Icon = tab.icon;
                             return (
                                 <button
-                                    key={module.id}
-                                    onClick={() => setActiveModule(module.id)}
-                                    className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium transition-all whitespace-nowrap border ${
-                                        isActive
-                                            ? `bg-${module.color}-500/10 border-${module.color}-500/50 text-${module.color}-400`
-                                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-white hover:border-slate-700'
-                                    }`}
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-[1.5rem] text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab.id
+                                        ? 'bg-slate-800 text-white dark:bg-white dark:text-slate-900 shadow-md'
+                                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800'
+                                        }`}
                                 >
                                     <Icon className="h-5 w-5" />
-                                    {module.label}
+                                    {tab.label}
                                 </button>
                             );
                         })}
                     </div>
                 </div>
 
-                {/* Área de Contenido (Scrollable) */}
-                <div className="flex-1 overflow-y-auto bg-slate-950 custom-scrollbar relative">
-                    {/* Renderizado Condicional de Módulos */}
-                    {activeModule === 'FINANCE' && <FinanceModule />}
-                    {activeModule === 'SCM' && <SCMModule />}
-                    {activeModule === 'AUTOMATION' && <AutomationModule />}
-
-                    {/* Integración con las otras vistas completas */}
-                    {activeModule === 'CRM' && <CRMView />}
-                    {activeModule === 'HR' && <UsersView />}
+                {/* Main Content Area */}
+                <div className="flex-1 overflow-y-auto">
+                    {activeTab === 'PIPELINE' && renderPipeline()}
+                    {activeTab === 'WON' && renderWonClients()}
+                    {activeTab === 'CONTACTS' && renderContacts()}
+                    {activeTab === 'COMPANIES' && renderCompanies()}
+                    {activeTab === 'REPORTS' && renderReports()}
+                    {activeTab === 'LAUNCHPAD' && <BoostedLaunchpad />}
+                    {activeTab === 'AUTOMATION' && renderAutomation()}
+                    {activeTab === 'INTEGRATIONS' && renderIntegrations()}
                 </div>
+
+
+                {/* New Deal Modal Overlay */}
+                {isFormOpen && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                        <form onSubmit={handleAddTask} className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-lg w-full">
+                            <div className="p-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
+                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Nuevo Trato</h2>
+                                <button type="button" onClick={() => setIsFormOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-gray-400 transition-colors">
+                                    <X className="h-6 w-6" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 space-y-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Título de Oportunidad</label>
+                                    <input type="text" required value={newTask.title} onChange={(e) => setNewTask({ ...newTask, title: e.target.value })} className="w-full px-5 py-3 bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="Ej: Licencia anual..." />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Cliente</label>
+                                    <input type="text" value={newTask.client} onChange={(e) => setNewTask({ ...newTask, client: e.target.value })} className="w-full px-5 py-3 bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="Empresa S.A." />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Valor Estimado</label>
+                                        <div className="relative">
+                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                                            <input type="number" value={newTask.dealValue} onChange={(e) => setNewTask({ ...newTask, dealValue: e.target.value })} className="w-full pl-7 pr-5 py-3 bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="0.00" />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Prioridad</label>
+                                        <select value={newTask.priority} onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })} className="w-full px-5 py-3 bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none cursor-pointer">
+                                            <option value="LOW">Baja</option>
+                                            <option value="MEDIUM">Media</option>
+                                            <option value="HIGH">Alta</option>
+                                        </select>
+                                        <ChevronDown className="h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Descripción</label>
+                                    <textarea value={newTask.description} onChange={(e) => setNewTask({ ...newTask, description: e.target.value })} className="w-full px-5 py-3 bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 h-24 resize-none" placeholder="Detalles adicionales..." />
+                                </div>
+                            </div>
+
+                            <div className="p-6 border-t border-gray-100 dark:border-slate-700">
+                                <button type="submit" className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-colors">
+                                    Crear Oportunidad
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                )}
+
+                {/* Automation Form Modal */}
+                {isAutoFormOpen && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                        <form onSubmit={handleSaveAutomation} className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-lg w-full">
+                            <div className="p-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
+                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{editingAutoId ? 'Editar Regla' : 'Nueva Automatización'}</h2>
+                                <button type="button" onClick={() => setIsAutoFormOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-gray-400 transition-colors">
+                                    <X className="h-6 w-6" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 space-y-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Nombre de la Regla</label>
+                                    <input type="text" required value={newAutoData.name} onChange={(e) => setNewAutoData({ ...newAutoData, name: e.target.value })} className="w-full px-5 py-3 bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="Ej: Notificar Nuevo Lead" />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Disparador (Trigger)</label>
+                                    <input type="text" required value={newAutoData.trigger} onChange={(e) => setNewAutoData({ ...newAutoData, trigger: e.target.value })} className="w-full px-5 py-3 bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500/20" placeholder="Ej: Estado cambia a Ganado" />
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Describe cuándo se debe ejecutar esta acción.</p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Acción (Action)</label>
+                                    <input type="text" required value={newAutoData.action} onChange={(e) => setNewAutoData({ ...newAutoData, action: e.target.value })} className="w-full px-5 py-3 bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20" placeholder="Ej: Enviar email de bienvenida" />
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Describe qué sucederá automáticamente.</p>
+                                </div>
+                            </div>
+
+                            <div className="p-6 border-t border-gray-100 dark:border-slate-700">
+                                <button type="submit" className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-colors">
+                                    {editingAutoId ? 'Guardar Cambios' : 'Crear Regla'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                )}
+
+                {/* Celebration Overlay */}
+                {showCelebration && (
+                    <div className="fixed inset-0 bg-emerald-500/30 backdrop-blur-md flex items-center justify-center z-[60]">
+                        <div className="text-center p-10 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border-4 border-emerald-500 animate-pulse">
+                            <Trophy className="h-16 w-16 text-emerald-500 mx-auto mb-4 animate-bounce" />
+                            <h2 className="text-4xl font-black text-gray-900 dark:text-white mb-2">¡Trato Cerrado!</h2>
+                            <p className="text-xl text-gray-600 dark:text-gray-400">Archivando en clientes ganados...</p>
+                            ```
+                        </div>
+                    </div>
+                )}
+
+                {/* Task Details Modal (Redesigned & Optimized) */}
+                {selectedTask && (
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-50 p-4">
+                        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-white/20 ring-1 ring-black/5">
+
+                            <div className="p-8 border-b border-gray-100 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl sticky top-0 z-10">
+                                {/* Progress / Status Stepper */}
+                                <div className="flex justify-between items-start mb-8 px-4">
+                                    {COLUMNS.map((col, index) => {
+                                        const isActive = selectedTask.status === col.id;
+                                        const isCompleted = COLUMNS.findIndex(c => c.id === selectedTask.status) > index;
+
+                                        return (
+                                            <div key={col.id}
+                                                onClick={() => updateTaskProperty(selectedTask.id, 'status', col.id)}
+                                                className={`flex-1 flex flex-col items-center cursor-pointer group relative ${index < COLUMNS.length - 1 ? 'pr-4' : ''}`}
+                                            >
+                                                <div className={`flex items-center justify-center w-7 h-7 rounded-full border-2 transition-all duration-300 mb-3 z-10 relative
+                                            ${isActive ? 'bg-indigo-600 border-indigo-600 text-white scale-125 shadow-lg shadow-indigo-500/40' :
+                                                        isCompleted ? 'bg-emerald-500 border-emerald-500 text-white' :
+                                                            'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-300'}`}
+                                                >
+                                                    {isCompleted ? <Check className="h-3.5 w-3.5" /> : <span className="text-[10px] font-bold">{index + 1}</span>}
+                                                </div>
+                                                <p className={`text-[10px] uppercase tracking-wider font-bold text-center transition-colors duration-300 ${isActive ? 'text-indigo-600 dark:text-indigo-400 translate-y-0.5' : 'text-gray-400 dark:text-gray-600'}`}>{col.title}</p>
+
+                                                {/* Connecting Line */}
+                                                {index < COLUMNS.length - 1 && (
+                                                    <div className="absolute top-3.5 left-1/2 w-full h-[2px] -translate-y-1/2 -z-0 bg-gray-100 dark:bg-slate-800 overflow-hidden rounded-full">
+                                                        <div className={`h-full transition-all duration-500 ease-out ${isCompleted ? 'w-full bg-emerald-500' : 'w-0'}`} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Header */}
+                                <div className="flex justify-between items-start gap-6">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide border ${getPriorityColor(selectedTask.priority)}`}>
+                                                {selectedTask.priority === 'HIGH' ? 'Alta Prioridad' : selectedTask.priority === 'MEDIUM' ? 'Media' : 'Baja'}
+                                            </span>
+                                            <span className="text-xs font-medium text-gray-400 dark:text-gray-500">#{selectedTask.id}</span>
+                                        </div>
+                                        <h3 className="text-4xl font-black text-gray-900 dark:text-white leading-tight tracking-tight truncate">{selectedTask.title}</h3>
+                                    </div>
+                                    <button
+                                        onClick={() => setSelectedTask(null)}
+                                        className="p-3 bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm hover:shadow-md hover:bg-gray-50 dark:hover:bg-slate-700 transition-all group"
+                                    >
+                                        <X className="h-6 w-6 text-gray-400 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-8 grid grid-cols-1 lg:grid-cols-12 gap-10 bg-gray-50/50 dark:bg-slate-900/50 relative">
+
+                                {/* Left Column (Main Content) */}
+                                <div className="lg:col-span-8 space-y-8">
+
+                                    {/* Client Card */}
+                                    <div className="group p-1">
+                                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-3 ml-1">Cliente Asociado</h4>
+                                        <div className="flex items-center gap-5 p-5 bg-white dark:bg-slate-800 rounded-3xl border border-gray-100 dark:border-slate-700/50 shadow-sm hover:shadow-md transition-all cursor-pointer group-hover:border-indigo-100 dark:group-hover:border-indigo-900/30">
+                                            <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-xl font-black flex items-center justify-center shadow-inner">
+                                                {selectedTask.client?.charAt(0) || 'C'}
+                                            </div>
+                                            <div>
+                                                <p className="text-lg font-bold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{selectedTask.client}</p>
+                                                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Cliente Corporativo • <span className="text-emerald-500">Activo</span></p>
+                                            </div>
+                                            <ArrowRight className="h-5 w-5 text-gray-300 ml-auto group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
+                                        </div>
+                                    </div>
+
+                                    {/* Description */}
+                                    <div className="space-y-3">
+                                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 ml-1">Descripción</h4>
+                                        <div className="relative group">
+                                            <textarea
+                                                value={selectedTask.description}
+                                                onChange={(e) => updateTaskProperty(selectedTask.id, 'description', e.target.value)}
+                                                className="w-full text-base text-gray-600 dark:text-gray-300 leading-relaxed p-6 border-none rounded-3xl bg-white dark:bg-slate-800 shadow-sm focus:ring-0 focus:bg-white dark:focus:bg-slate-800 transition-all resize-none h-40 group-hover:shadow-md"
+                                                placeholder="Añade una descripción detallada..."
+                                            />
+                                            <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                                <Pencil className="h-4 w-4 text-gray-300" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Tags */}
+                                    <div className="space-y-3">
+                                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 ml-1">Etiquetas</h4>
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            {selectedTask.tags.map(tag => (
+                                                <span key={tag} className="flex items-center gap-2 pl-4 pr-2 py-2 rounded-full text-xs font-bold bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-600 dark:text-gray-300 shadow-sm hover:shadow-md transition-all group cursor-default">
+                                                    <Tag className="h-3 w-3 text-indigo-400" />
+                                                    {tag}
+                                                    <button
+                                                        onClick={() => removeTag(selectedTask.id, tag)}
+                                                        className="p-1 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-full text-gray-300 hover:text-rose-500 transition-colors"
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </button>
+                                                </span>
+                                            ))}
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    value={newTagInput}
+                                                    onChange={(e) => setNewTagInput(e.target.value)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleAddTag(selectedTask.id)}
+                                                    placeholder="+ Tag"
+                                                    className="w-24 px-4 py-2 bg-transparent border border-dashed border-gray-300 dark:border-slate-600 rounded-full text-xs font-medium focus:outline-none focus:border-indigo-500 focus:w-32 transition-all placeholder:text-gray-400"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Column (Stats & History) - Sticky */}
+                                <div className="lg:col-span-4 space-y-8 lg:sticky lg:top-0 h-fit">
+
+                                    {/* Deal Stats Card */}
+                                    <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-slate-700 space-y-6">
+                                        <div>
+                                            <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-2">Valor del Trato</h4>
+                                            <div className="flex items-center text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+                                                <span className="text-gray-300 mr-1">$</span>
+                                                <input
+                                                    type="number"
+                                                    value={selectedTask.dealValue}
+                                                    onChange={(e) => updateTaskProperty(selectedTask.id, 'dealValue', Number(e.target.value))}
+                                                    className="bg-transparent border-none focus:outline-none w-full p-0 placeholder:text-gray-200"
+                                                    placeholder="0"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-6 border-t border-gray-100 dark:border-slate-700">
+                                            <div className="flex justify-between items-end mb-2">
+                                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Probabilidad</h4>
+                                                <span className="text-xl font-bold text-amber-500">{selectedTask.score}%</span>
+                                            </div>
+
+                                            {/* Clickable Progress Bar (No Lag) */}
+                                            <div
+                                                className="relative h-4 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden cursor-pointer group"
+                                                onClick={(e) => {
+                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                    const x = e.clientX - rect.left;
+                                                    const width = rect.width;
+                                                    const percentage = Math.round((x / width) * 100);
+                                                    // Clamp between 0 and 100
+                                                    const clamped = Math.min(100, Math.max(0, percentage));
+                                                    // Round to nearest 5 for cleaner numbers
+                                                    const rounded = Math.round(clamped / 5) * 5;
+                                                    updateTaskProperty(selectedTask.id, 'score', rounded);
+                                                }}
+                                            >
+                                                <div
+                                                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-amber-300 to-amber-500 rounded-full transition-all duration-300"
+                                                    style={{ width: `${selectedTask.score}%` }}
+                                                />
+                                                {/* Hover effect to show potential click */}
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
+                                            </div>
+                                            <div className="flex justify-between mt-1 text-[10px] text-gray-400 font-medium px-1">
+                                                <span>0%</span>
+                                                <span>50%</span>
+                                                <span>100%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Activity Feed */}
+                                    <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-slate-700 flex flex-col h-[400px]">
+                                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-4 flex items-center gap-2">
+                                            <MessageSquare className="h-3 w-3" />
+                                            Notas & Actividad
+                                        </h4>
+
+                                        <div className="flex-1 overflow-y-auto space-y-4 pr-2 mb-4 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-slate-700">
+                                            {selectedTask.comments && selectedTask.comments.length > 0 ? (
+                                                selectedTask.comments.map(c => (
+                                                    <div key={c.id} className="flex gap-3">
+                                                        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-[10px] font-bold text-indigo-600 shrink-0">
+                                                            {c.user.charAt(0)}
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <div className="bg-gray-50 dark:bg-slate-700/50 p-3 rounded-2xl rounded-tl-none text-sm text-gray-700 dark:text-gray-200">
+                                                                {c.text}
+                                                            </div>
+                                                            <p className="text-[10px] text-gray-400 mt-1 ml-1">{c.time}</p>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-50">
+                                                    <MessageSquare className="h-8 w-8 mb-2" />
+                                                    <p className="text-xs">Sin actividad reciente</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                value={newCommentInput}
+                                                onChange={(e) => setNewCommentInput(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleAddComment(selectedTask.id)}
+                                                placeholder="Escribe una nota..."
+                                                className="w-full pl-4 pr-12 py-3 bg-gray-50 dark:bg-slate-700/30 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                            />
+                                            <button
+                                                onClick={() => handleAddComment(selectedTask.id)}
+                                                disabled={!newCommentInput.trim()}
+                                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-0 disabled:scale-75 transition-all shadow-md shadow-indigo-500/20"
+                                            >
+                                                <Send className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Footer Actions */}
+                            <div className="p-6 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex justify-between items-center z-20 relative">
+                                <button className="px-6 py-3 rounded-2xl text-sm font-bold text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/10 transition-all flex items-center gap-2 group">
+                                    <Archive className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                                    Archivar Trato
+                                </button>
+
+                                <div className="flex items-center gap-4">
+                                    {selectedTask.status === 'DONE' ? (
+                                        <button
+                                            onClick={() => handleMoveToWon(selectedTask.id)}
+                                            className="px-8 py-4 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/30 transition-all hover:-translate-y-0.5 hover:shadow-xl flex items-center gap-2"
+                                        >
+                                            <Trophy className="h-5 w-5 animate-pulse" />
+                                            Cerrar Trato y Celebrar
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => setSelectedTask(null)}
+                                            className="px-10 py-4 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 shadow-lg shadow-indigo-500/30 transition-all hover:-translate-y-0.5 hover:shadow-xl"
+                                        >
+                                            Listo, Guardar
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Deal Detail Modal */}
+                {selectedDeal && (
+                    <DealDetailModal
+                        deal={selectedDeal}
+                        onClose={() => setSelectedDeal(null)}
+                        onUpdate={handleUpdateDeal}
+                        onDelete={handleDeleteDeal}
+                    />
+                )}
+
+                {/* Contact Detail Modal */}
+                {selectedContact && (
+                    <ContactDetailModal
+                        contact={selectedContact}
+                        deals={tasks}
+                        onClose={() => setSelectedContact(null)}
+                        onUpdate={handleUpdateContact}
+                    />
+                )}
+
+                {/* Company Detail Modal */}
+                {selectedCompany && (
+                    <CompanyDetailModal
+                        company={selectedCompany}
+                        contacts={contacts}
+                        deals={tasks}
+                        onClose={() => setSelectedCompany(null)}
+                        onUpdate={handleUpdateCompany}
+                    />
+                )}
+
+                {/* New Contact Modal */}
+                {isNewContactModalOpen && (
+                    <NewContactModal
+                        companies={companies}
+                        onClose={() => setIsNewContactModalOpen(false)}
+                        onCreate={handleCreateContact}
+                    />
+                )}
+
+                {/* New Company Modal */}
+                {isNewCompanyModalOpen && (
+                    <NewCompanyModal
+                        onClose={() => setIsNewCompanyModalOpen(false)}
+                        onCreate={handleCreateCompany}
+                    />
+                )}
             </div>
         </div>
     );
 };
-
-export default ERPView;
+export default CRMView;

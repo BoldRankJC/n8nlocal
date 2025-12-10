@@ -44,7 +44,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/mail", mailRoutes);
 app.use("/api/noti", noti);
 app.use("/api/menu", menu);
-
+app.use("/api/crm", menu);
 
 // Ruta base
 app.get("/", (req, res) => {

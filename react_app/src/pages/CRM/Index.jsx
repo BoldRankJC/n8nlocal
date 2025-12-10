@@ -1,14 +1,14 @@
-import React, { useState, useMemo } from 'react';
-import Sidebar from '../../components/ui/Sidebar';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
     Plus, MoreHorizontal, Calendar, CheckCircle2,
     ArrowRight, Trash2, Briefcase, Layout,
     Search, DollarSign, X, MessageSquare, User, Building,
     Flame, Zap, Snowflake, BarChart2, Users, Puzzle,
-    Workflow, PieChart, TrendingUp, Mail, Slack, Database,
-    Phone, FileText, AlertCircle, Settings, Power, Pencil, ChevronDown, Tag, Clock, Save, Play, Send, Check, Trophy, Star, Archive, Minus
+    TrendingUp, Mail, Slack, Database,
+    Phone, AlertCircle, Pencil, ChevronDown, Tag, Save, Send, Check, Trophy, Star, Archive, Minus
 } from 'lucide-react';
-// import { TaskStatus, TaskPriority } from '../constants'; // Se asume que este archivo no es crítico para el funcionamiento de este componente y se comenta.
+
+const API_BASE_URL = 'https://boostedapi.vercel.app/api/crm';
 
 // Definición de constantes para el Kanban
 const COLUMNS = [
@@ -21,47 +21,17 @@ const COLUMNS = [
 export const CRMView = () => {
     const [activeTab, setActiveTab] = useState('PIPELINE');
     const [showCelebration, setShowCelebration] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    // --- PIPELINE STATE ---
-    const [tasks, setTasks] = useState([
-        {
-            id: '1', title: 'Licencia Enterprise Q3', description: 'Negociar renovación de licencia anual para 500 usuarios.',
-            status: 'TODO', priority: 'HIGH', assignee: 'AL', dueDate: '25 Feb', tags: ['Ventas', 'Renovación'],
-            client: 'TechCorp Global', dealValue: 45000,
-            score: 75,
-            scoringCriteria: { budget: true, authority: true, need: true, timing: false },
-            comments: [{ id: 'c1', user: 'Juan Perez', text: 'El cliente pidió 10% de descuento.', time: 'Hace 2h' }]
-        },
-        {
-            id: '2', title: 'Implementación CRM', description: 'Coordinar reunión de kickoff con el equipo técnico.',
-            status: 'IN_PROGRESS', priority: 'MEDIUM', assignee: 'JD', dueDate: '15 Feb', tags: ['Servicios'],
-            client: 'Banco Futuro', dealValue: 12500,
-            score: 50,
-            scoringCriteria: { budget: true, authority: false, need: true, timing: false },
-            comments: []
-        },
-        {
-            id: '3', title: 'Consultoría RRHH', description: 'Revisión final de contrato legal.',
-            status: 'REVIEW', priority: 'HIGH', assignee: 'MG', dueDate: '12 Feb', tags: ['Legal'],
-            client: 'Innovate SpA', dealValue: 8200,
-            score: 100,
-            scoringCriteria: { budget: true, authority: true, need: true, timing: true },
-            comments: []
-        },
-    ]);
+    // --- ESTADO CENTRALIZADO DEL CRM (viene de la API) ---
+    const [tasks, setTasks] = useState([]);
+    const [wonDeals, setWonDeals] = useState([]);
+    const [contacts, setContacts] = useState([]);
+    const [automations, setAutomations] = useState([]);
+    const [integrations, setIntegrations] = useState([]); // Aunque estas son estáticas, las dejamos para el render
 
-    // --- WON DEALS STATE (New Storage) ---
-    const [wonDeals, setWonDeals] = useState([
-        {
-            id: '4', title: 'Suscripción Startup', description: 'Onboarding completado exitosamente.',
-            status: 'DONE', priority: 'LOW', assignee: 'AL', dueDate: '10 Feb', tags: ['Onboarding'],
-            client: 'Green Energy', dealValue: 2500,
-            score: 100,
-            scoringCriteria: { budget: true, authority: true, need: true, timing: true },
-            comments: []
-        },
-    ]);
-
+    // --- ESTADO LOCAL DE LA UI ---
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isAutoFormOpen, setIsAutoFormOpen] = useState(false);
     const [editingAutoId, setEditingAutoId] = useState(null);
@@ -69,134 +39,232 @@ export const CRMView = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterPriority, setFilterPriority] = useState('ALL');
     const [reportPeriod, setReportPeriod] = useState('S1');
-
-    // Local state for edit inputs inside the modal
     const [newTagInput, setNewTagInput] = useState('');
     const [newCommentInput, setNewCommentInput] = useState('');
-
-    const [newTask, setNewTask] = useState({
-        title: '', description: '', priority: 'MEDIUM', assignee: 'YO', client: '', dealValue: '',
-    });
-
+    const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'MEDIUM', assignee: 'YO', client: '', dealValue: '' });
     const [newAutoData, setNewAutoData] = useState({ name: '', trigger: '', action: '' });
 
-    // --- MOCK DATA FOR NEW TABS ---
-    const contacts = [
-        { id: 1, name: 'Roberto Gomez', role: 'CTO', company: 'TechCorp Global', email: 'roberto@techcorp.com', status: 'Cliente', lastContact: 'Ayer', tickets: 0 },
-        { id: 2, name: 'Maria Ferrera', role: 'Gerente RRHH', company: 'Banco Futuro', email: 'mferrera@bancofuturo.com', status: 'Prospecto', lastContact: 'Hace 3 días', tickets: 2 },
-        { id: 3, name: 'Luis Silva', role: 'CEO', company: 'Innovate SpA', email: 'lsilva@innovate.cl', status: 'Cliente', lastContact: 'Hace 1 semana', tickets: 0 },
-        { id: 4, name: 'Ana Torres', role: 'Jefe Operaciones', company: 'Green Energy', email: 'ana@green.com', status: 'Cliente', lastContact: 'Hoy', tickets: 1 },
-    ];
 
-    const [automations, setAutomations] = useState([
-        { id: 1, name: 'Bienvenida Nuevo Lead', trigger: 'Nuevo Trato Creado', action: 'Enviar Email de Bienvenida', active: true, icon: Mail },
-        { id: 2, name: 'Alerta de Estancamiento', trigger: 'Sin actividad por 5 días', action: 'Notificar al Vendedor', active: true, icon: AlertCircle },
-        { id: 3, name: 'Celebración de Cierre', trigger: 'Estado cambia a Ganado', action: 'Mensaje a Slack #ventas', active: false, icon: Slack },
-        { id: 4, name: 'Alta Prioridad', trigger: 'Valor > $10,000', action: 'Marcar Prioridad Alta', active: true, icon: Zap },
-    ]);
+    // --- FUNCIÓN DE CARGA DE DATOS ---
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(`${API_BASE_URL}`);
+            if (!response.ok) throw new Error('Error al cargar datos del CRM.');
+            const data = await response.json();
+            
+            setTasks(data.tasks || []);
+            setWonDeals(data.wonDeals || []);
+            setContacts(data.contacts || []);
+            setAutomations(data.automations || []);
+            setIntegrations(data.integrations || []);
+        } catch (err) {
+            console.error(err);
+            setError('Error al conectar con la API del CRM.');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
-    const integrations = [
-        { id: 1, name: 'Google Workspace', desc: 'Sincroniza emails y calendario.', connected: true, icon: Mail, color: 'text-red-500 bg-red-50 dark:bg-red-900/20' },
-        { id: 2, name: 'Slack', desc: 'Notificaciones de equipo en tiempo real.', connected: true, icon: Slack, color: 'text-purple-500 bg-purple-50 dark:bg-purple-900/20' },
-        { id: 3, name: 'Zoom', desc: 'Genera links de reuniones automáticamente.', connected: false, icon: Phone, color: 'text-blue-500 bg-blue-50 dark:bg-blue-900/20' },
-        { id: 4, name: 'ERP / Nómina', desc: 'Sincroniza datos de facturación.', connected: false, icon: Database, color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' },
-    ];
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
-    // --- LOGIC ---
-    const stats = useMemo(() => {
-        // Calculate stats including active tasks AND won deals
-        const activeValue = tasks.reduce((acc, t) => acc + (t.dealValue || 0), 0);
-        const wonValue = wonDeals.reduce((acc, t) => acc + (t.dealValue || 0), 0);
+    // --- LÓGICA DE MANIPULACIÓN DE DATOS (Interacción con API) ---
 
-        const totalValue = activeValue + wonValue;
+    const handleUpdateTask = useCallback(async (taskId, updates) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates),
+            });
+            if (!response.ok) throw new Error('Error al actualizar el trato.');
+            
+            // Re-fetch para sincronizar el estado
+            await fetchData();
+            // Si el modal está abierto, actualiza el estado local del modal (requiere re-fetch o ajuste manual)
+            setSelectedTask(prev => prev && prev.id === taskId ? { ...prev, ...updates } : prev);
 
-        const openDeals = tasks.length;
-        const totalWon = wonDeals.length + tasks.filter(t => t.status === 'DONE').length;
-        const totalDeals = tasks.length + wonDeals.length;
+        } catch (err) {
+            console.error('Update error:', err);
+            setError('Error al guardar cambios.');
+        }
+    }, [fetchData]);
 
-        const conversionRate = totalDeals > 0 ? Math.round((totalWon / totalDeals) * 100) : 0;
-
-        return { totalValue, openDeals, conversionRate, totalWon };
-    }, [tasks, wonDeals]);
-
-    const filteredTasks = tasks.filter(t => {
-        const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            t.client?.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesPriority = filterPriority === 'ALL' || t.priority === filterPriority;
-        return matchesSearch && matchesPriority;
-    });
-
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-    const toggleSidebar = () => {
-        setSidebarCollapsed(!sidebarCollapsed);
-    };
-
-    const handleAddTask = (e) => {
+    const handleAddTask = async (e) => {
         e.preventDefault();
         if (!newTask.title) return;
-        const task = {
-            id: Date.now().toString(),
-            title: newTask.title, description: newTask.description, status: 'TODO', priority: newTask.priority, assignee: newTask.assignee,
-            dueDate: 'Por definir', tags: ['Nuevo'], client: newTask.client || 'Sin Cliente', dealValue: Number(newTask.dealValue) || 0,
-            comments: [], score: 0, scoringCriteria: { budget: false, authority: false, need: false, timing: false }
+
+        const taskPayload = {
+            title: newTask.title,
+            description: newTask.description,
+            status: 'TODO',
+            priority: newTask.priority,
+            assignee: newTask.assignee,
+            dueDate: 'Por definir',
+            tags: ['Nuevo'],
+            client: newTask.client || 'Sin Cliente',
+            dealValue: Number(newTask.dealValue) || 0,
+            comments: [],
+            score: 0,
+            scoringCriteria: { budget: false, authority: false, need: false, timing: false }
         };
-        setTasks([...tasks, task]);
-        setNewTask({ title: '', description: '', priority: 'MEDIUM', assignee: 'YO', client: '', dealValue: '' });
-        setIsFormOpen(false);
+
+        try {
+            const response = await fetch(API_BASE_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(taskPayload),
+            });
+            if (!response.ok) throw new Error('Error al crear el trato.');
+            
+            // Limpiar y actualizar la lista
+            setNewTask({ title: '', description: '', priority: 'MEDIUM', assignee: 'YO', client: '', dealValue: '' });
+            setIsFormOpen(false);
+            await fetchData();
+
+        } catch (err) {
+            console.error('Add task error:', err);
+            setError('Error al crear la oportunidad.');
+        }
     };
 
-    const handleMoveToWon = (taskId) => {
-        // 1. Start Celebration
+    const handleMoveToWon = async (taskId) => {
         setShowCelebration(true);
 
-        // 2. Wait for animation
-        setTimeout(() => {
-            const taskToMove = tasks.find(t => t.id === taskId);
-            if (taskToMove) {
-                setWonDeals([
-                    { ...taskToMove, status: 'DONE', score: 100 }, // Ensure it's 100% and DONE
-                    ...wonDeals
-                ]);
-                setTasks(tasks.filter(t => t.id !== taskId));
+        const taskToMove = tasks.find(t => t.id === taskId);
+        if (!taskToMove) return;
 
-                if (selectedTask && selectedTask.id === taskId) {
-                    setSelectedTask(null); // Close modal if open
-                }
+        try {
+            const response = await fetch(`${API_BASE_URL}/won/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            if (!response.ok) throw new Error('Error al mover a ganados.');
 
-                // 3. Switch Tab to show the result
+            setTimeout(async () => {
+                await fetchData(); // Refrescar listas
+                if (selectedTask && selectedTask.id === taskId) setSelectedTask(null);
                 setActiveTab('WON');
                 setShowCelebration(false);
-            }
-        }, 1800);
+            }, 1800);
+
+        } catch (err) {
+            console.error('Move to won error:', err);
+            setError('Error al mover a clientes ganados.');
+            setShowCelebration(false);
+        }
     };
 
-    const handleSaveAutomation = (e) => {
+    const handleSaveAutomation = async (e) => {
         e.preventDefault();
         if (!newAutoData.name || !newAutoData.trigger || !newAutoData.action) return;
+        
+        const payload = { ...newAutoData, active: true, icon: 'Zap' };
 
-        if (editingAutoId) {
-            setAutomations(prev => prev.map(auto =>
-                auto.id === editingAutoId
-                    ? { ...auto, name: newAutoData.name, trigger: newAutoData.trigger, action: newAutoData.action }
-                    : auto
-            ));
-        } else {
-            const newRule = {
-                id: Date.now(),
-                name: newAutoData.name,
-                trigger: newAutoData.trigger,
-                action: newAutoData.action,
-                active: true,
-                icon: Zap
-            };
-            setAutomations(prev => [...prev, newRule]);
+        try {
+            const url = editingAutoId ? `${API_BASE_URL}/automation/${editingAutoId}` : `${API_BASE_URL}/automation`;
+            const method = editingAutoId ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) throw new Error('Error al guardar la automatización.');
+
+            setNewAutoData({ name: '', trigger: '', action: '' });
+            setEditingAutoId(null);
+            setIsAutoFormOpen(false);
+            await fetchData();
+
+        } catch (err) {
+            console.error('Automation save error:', err);
+            setError('Error al guardar la regla de automatización.');
         }
+    };
 
+    const toggleAutomation = async (id) => {
+        const auto = automations.find(a => a.id === id);
+        if (!auto) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/automation/toggle/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ active: !auto.active }),
+            });
+            if (!response.ok) throw new Error('Error al cambiar el estado.');
+            
+            await fetchData();
+        } catch (err) {
+            console.error('Toggle error:', err);
+            setError('Error al cambiar el estado de la automatización.');
+        }
+    };
+
+    const handleDeleteAutomation = async (id) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/automation/${id}`, {
+                method: 'DELETE',
+            });
+            if (!response.ok) throw new Error('Error al eliminar la automatización.');
+
+            await fetchData();
+        } catch (err) {
+            console.error('Delete automation error:', err);
+            setError('Error al eliminar la regla.');
+        }
+    };
+
+    // --- FUNCIONES DE ACTUALIZACIÓN DENTRO DEL MODAL ---
+    const updateTaskProperty = useCallback((taskId, field, value) => {
+        // Optimistic UI Update
+        setTasks(prevTasks => prevTasks.map(t => t.id === taskId ? { ...t, [field]: value } : t));
+        setSelectedTask(prev => prev ? { ...prev, [field]: value } : null);
+        
+        // Llamada a la API después de un pequeño delay o debounce para evitar spamming
+        // Para simplificar, hacemos la llamada directa:
+        handleUpdateTask(taskId, { [field]: value });
+    }, [handleUpdateTask]);
+
+    const handleAddTag = (taskId) => {
+        if (!newTagInput.trim()) return;
+        const currentTags = selectedTask?.tags || [];
+        const newTags = [...currentTags, newTagInput.trim()];
+        updateTaskProperty(taskId, 'tags', newTags);
+        setNewTagInput('');
+    };
+
+    const removeTag = (taskId, tagToRemove) => {
+        const currentTags = selectedTask?.tags || [];
+        const newTags = currentTags.filter(t => t !== tagToRemove);
+        updateTaskProperty(taskId, 'tags', newTags);
+    };
+
+    const handleAddComment = (taskId) => {
+        if (!newCommentInput.trim()) return;
+        const newComment = {
+            id: Date.now().toString(),
+            user: 'Tú',
+            text: newCommentInput,
+            time: 'Ahora mismo'
+        };
+        const currentComments = selectedTask?.comments || [];
+        const newComments = [newComment, ...currentComments];
+        updateTaskProperty(taskId, 'comments', newComments);
+        setNewCommentInput('');
+    };
+
+    // --- MOCKS y UTILS ---
+
+    const openCreateAutoModal = () => {
         setNewAutoData({ name: '', trigger: '', action: '' });
         setEditingAutoId(null);
-        setIsAutoFormOpen(false);
-    };
+        setIsAutoFormOpen(true);
+    }
 
     const handleEditAutomation = (id) => {
         const auto = automations.find(a => a.id === id);
@@ -206,61 +274,8 @@ export const CRMView = () => {
             setIsAutoFormOpen(true);
         }
     };
-
-    const handleDeleteAutomation = (id) => {
-        setAutomations(prev => prev.filter(a => a.id !== id));
-    };
-
-    const toggleAutomation = (id) => {
-        setAutomations(prev => prev.map(auto =>
-            auto.id === id ? { ...auto, active: !auto.active } : auto
-        ));
-    };
-
-    const openCreateAutoModal = () => {
-        setNewAutoData({ name: '', trigger: '', action: '' });
-        setEditingAutoId(null);
-        setIsAutoFormOpen(true);
-    }
-
-    // --- TASK MODAL UPDATE FUNCTIONS ---
-
-    const updateTaskProperty = (taskId, field, value) => {
-        const updatedTasks = tasks.map(t => t.id === taskId ? { ...t, [field]: value } : t);
-        setTasks(updatedTasks);
-
-        // Also update the currently selected task so the modal reflects changes immediately
-        if (selectedTask && selectedTask.id === taskId) {
-            setSelectedTask({ ...selectedTask, [field]: value });
-        }
-    };
-
-    const handleAddTag = (taskId) => {
-        if (!newTagInput.trim()) return;
-        const currentTags = selectedTask?.tags || [];
-        if (!currentTags.includes(newTagInput.trim())) {
-            updateTaskProperty(taskId, 'tags', [...currentTags, newTagInput.trim()]);
-        }
-        setNewTagInput('');
-    };
-
-    const removeTag = (taskId, tagToRemove) => {
-        const currentTags = selectedTask?.tags || [];
-        updateTaskProperty(taskId, 'tags', currentTags.filter(t => t !== tagToRemove));
-    };
-
-    const handleAddComment = (taskId) => {
-        if (!newCommentInput.trim()) return;
-        const newComment = {
-            id: Date.now().toString(),
-            user: 'Tú', // In a real app this comes from auth
-            text: newCommentInput,
-            time: 'Ahora mismo'
-        };
-        const currentComments = selectedTask?.comments || [];
-        updateTaskProperty(taskId, 'comments', [newComment, ...currentComments]);
-        setNewCommentInput('');
-    };
+    
+    // ... (rest of the helper functions: getPriorityColor, getScoreColor, stats, filteredTasks) ...
 
     const getPriorityColor = (p) => {
         switch (p) {
@@ -277,13 +292,30 @@ export const CRMView = () => {
         return { color: 'text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20', icon: Snowflake, label: 'COLD' };
     };
 
-    // --- RENDER METHODS ---
+    const stats = useMemo(() => {
+        const activeValue = tasks.reduce((acc, t) => acc + (t.dealValue || 0), 0);
+        const wonValue = wonDeals.reduce((acc, t) => acc + (t.dealValue || 0), 0);
+        const totalValue = activeValue + wonValue;
+        const openDeals = tasks.length;
+        const totalWon = wonDeals.length;
+        const totalDeals = tasks.length + wonDeals.length;
+        const conversionRate = totalDeals > 0 ? Math.round((totalWon / totalDeals) * 100) : 0;
+        return { totalValue, openDeals, conversionRate, totalWon };
+    }, [tasks, wonDeals]);
+
+    const filteredTasks = tasks.filter(t => {
+        const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) || t.client?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesPriority = filterPriority === 'ALL' || t.priority === filterPriority;
+        return matchesSearch && matchesPriority;
+    });
+
+    // --- RENDER METHODS (Mantienen la lógica original, pero usan los nuevos estados) ---
+    // (renderPipeline, renderWonClients, renderContacts, renderReports, renderAutomation, renderIntegrations)
+
     const renderPipeline = () => (
-        <div className="p-6 space-y-6 h-full overflow-hidden ">
-
-            {/* Stats Bar */}
+        <div className="p-6 space-y-6 h-full overflow-hidden">
+            {/* ... (Stats Bar - usa stats) ... */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-
                 <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex items-center justify-between">
                     <DollarSign className="h-6 w-6 text-indigo-500" />
                     <div>
@@ -354,7 +386,7 @@ export const CRMView = () => {
                     COLUMNS.map(col => {
                         const colTasks = filteredTasks.filter(t => t.status === col.id);
                         return (
-                            <div key={col.id} className={`p-4 rounded-3xl min-h-[500px] ${col.color} space-y-4`}>
+                            <div key={col.id} className={`p-4 rounded-3xl min-h-[500px] ${col.color} space-y-4 overflow-y-auto`}>
                                 {/* Column Header */}
                                 <div className="flex items-center justify-between sticky top-4 bg-transparent backdrop-blur-sm pt-2 pb-1">
                                     <h3 className="text-lg font-bold flex items-center gap-2 text-gray-900 dark:text-white">
@@ -387,7 +419,7 @@ export const CRMView = () => {
                                                     onClick={() => setSelectedTask(task)}
                                                     className="cursor-pointer group bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 hover:shadow-lg hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:-translate-y-1 transition-all duration-200 relative"
                                                 >
-                                                    {/* Top Bar: Priority & Score */}
+                                                    {/* ... (Task Card Content) ... */}
                                                     <div className="flex items-center justify-between mb-3">
                                                         <span className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase ${getPriorityColor(task.priority)}`}>
                                                             {task.priority === 'HIGH' ? 'Alta' : task.priority === 'MEDIUM' ? 'Media' : 'Baja'}
@@ -445,87 +477,87 @@ export const CRMView = () => {
             </div>
         </div>
     );
-
+    
+    // ... (renderWonClients, renderContacts, renderReports, renderAutomation, renderIntegrations se mantienen iguales) ...
     const renderWonClients = () => {
-        const totalWonValue = wonDeals.reduce((acc, t) => acc + (t.dealValue || 0), 0);
+         const totalWonValue = wonDeals.reduce((acc, t) => acc + (t.dealValue || 0), 0);
+         return (
+             <div className="p-6 space-y-8">
+                 {/* Header Hero */}
+                 <div className="bg-emerald-50 dark:bg-emerald-900/10 p-8 rounded-3xl flex flex-col md:flex-row justify-between items-start border border-emerald-200 dark:border-emerald-900">
+                     <div>
+                         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                             <Trophy className="h-7 w-7 text-emerald-600" />
+                             Clientes Ganados
+                         </h2>
+                         <p className="text-gray-600 dark:text-gray-400">Celebra tus victorias y gestiona tus relaciones a largo plazo.</p>
+                     </div>
+                     <div className="mt-4 md:mt-0 text-right">
+                         <p className="text-sm text-gray-500 dark:text-gray-400">Valor Total Ganado</p>
+                         <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">${totalWonValue.toLocaleString()}</p>
+                     </div>
+                 </div>
 
-        return (
-            <div className="p-6 space-y-8">
-                {/* Header Hero */}
-                <div className="bg-emerald-50 dark:bg-emerald-900/10 p-8 rounded-3xl flex flex-col md:flex-row justify-between items-start border border-emerald-200 dark:border-emerald-900">
-                    <div>
-                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                            <Trophy className="h-7 w-7 text-emerald-600" />
-                            Clientes Ganados
-                        </h2>
-                        <p className="text-gray-600 dark:text-gray-400">Celebra tus victorias y gestiona tus relaciones a largo plazo.</p>
-                    </div>
-                    <div className="mt-4 md:mt-0 text-right">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Valor Total Ganado</p>
-                        <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">${totalWonValue.toLocaleString()}</p>
-                    </div>
-                </div>
+                 {/* Won Deals Grid */}
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                     {wonDeals.length === 0 ? (
+                         <div className="lg:col-span-3 p-12 text-center bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 space-y-3">
+                             <Star className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto" />
+                             <h3 className="text-xl font-bold text-gray-900 dark:text-white">Aún no hay clientes ganados</h3>
+                             <p className="text-gray-500 dark:text-gray-400">Mueve tratos desde la columna "Ganado" del tablero para verlos aquí.</p>
+                         </div>
+                     ) : (
+                         wonDeals.map(deal => (
+                             <div key={deal.id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 space-y-4 relative overflow-hidden">
 
-                {/* Won Deals Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {wonDeals.length === 0 ? (
-                        <div className="lg:col-span-3 p-12 text-center bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 space-y-3">
-                            <Star className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto" />
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Aún no hay clientes ganados</h3>
-                            <p className="text-gray-500 dark:text-gray-400">Mueve tratos desde la columna "Ganado" del tablero para verlos aquí.</p>
-                        </div>
-                    ) : (
-                        wonDeals.map(deal => (
-                            <div key={deal.id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 space-y-4 relative overflow-hidden">
-
-                                <div className="absolute top-0 right-0 p-3 bg-emerald-500 rounded-bl-xl text-white text-xs font-bold flex flex-col items-center">
-                                    <DollarSign className="h-4 w-4" />
-                                    <span className="text-lg leading-none mt-1">${deal.dealValue?.toLocaleString()}</span>
-                                    <span className="text-[10px] opacity-70">Valor Anual</span>
-                                </div>
+                                 <div className="absolute top-0 right-0 p-3 bg-emerald-500 rounded-bl-xl text-white text-xs font-bold flex flex-col items-center">
+                                     <DollarSign className="h-4 w-4" />
+                                     <span className="text-lg leading-none mt-1">${deal.dealValue?.toLocaleString()}</span>
+                                     <span className="text-[10px] opacity-70">Valor Anual</span>
+                                 </div>
 
 
-                                <div>
-                                    <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xl font-bold flex items-center justify-center mb-3">
-                                        {deal.client?.charAt(0) || 'C'}
-                                    </div>
-                                    <h4 className="text-lg font-bold text-gray-900 dark:text-white">{deal.client}</h4>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">{deal.title}</p>
-                                </div>
+                                 <div>
+                                     <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xl font-bold flex items-center justify-center mb-3">
+                                         {deal.client?.charAt(0) || 'C'}
+                                     </div>
+                                     <h4 className="text-lg font-bold text-gray-900 dark:text-white">{deal.client}</h4>
+                                     <p className="text-sm text-gray-500 dark:text-gray-400">{deal.title}</p>
+                                 </div>
 
-                                {/* Tags */}
-                                <div className="flex flex-wrap gap-2">
-                                    {
-                                        deal.tags.map(tag => (
-                                            <span key={tag} className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300">
-                                                <Tag className="h-3 w-3 inline mr-1" />
-                                                {tag}
-                                            </span>
-                                        ))
-                                    }
-                                </div>
+                                 {/* Tags */}
+                                 <div className="flex flex-wrap gap-2">
+                                     {
+                                         deal.tags.map(tag => (
+                                             <span key={tag} className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300">
+                                                 <Tag className="h-3 w-3 inline mr-1" />
+                                                 {tag}
+                                             </span>
+                                         ))
+                                     }
+                                 </div>
 
-                                {/* Footer */}
-                                <div className="pt-4 border-t border-gray-100 dark:border-slate-700 flex justify-between items-center text-sm text-gray-500 dark:text-gray-400">
-                                    <div className="flex items-center gap-1">
-                                        <Calendar className="h-4 w-4" />
-                                        <span>Ganado: {deal.dueDate}</span>
-                                    </div>
-                                    <CheckCircle2 className="h-5 w-5 text-emerald-500" title="Archivado" />
-                                </div>
+                                 {/* Footer */}
+                                 <div className="pt-4 border-t border-gray-100 dark:border-slate-700 flex justify-between items-center text-sm text-gray-500 dark:text-gray-400">
+                                     <div className="flex items-center gap-1">
+                                         <Calendar className="h-4 w-4" />
+                                         <span>Ganado: {deal.dueDate}</span>
+                                     </div>
+                                     <CheckCircle2 className="h-5 w-5 text-emerald-500" title="Archivado" />
+                                 </div>
 
-                                {/* Celebration Icon Overlay */}
-                                {showCelebration && (
-                                    <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-20">
-                                        <Trophy className="h-16 w-16 text-emerald-500 animate-bounce" />
-                                    </div>
-                                )}
-                            </div>
-                        ))
-                    )}
-                </div>
-            </div>
-        );
+                                 {/* Celebration Icon Overlay */}
+                                 {showCelebration && (
+                                     <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-20">
+                                         <Trophy className="h-16 w-16 text-emerald-500 animate-bounce" />
+                                     </div>
+                                 )}
+                             </div>
+                         ))
+                     )}
+                 </div>
+             </div>
+         );
     }
 
     const renderContacts = () => (
@@ -606,223 +638,228 @@ export const CRMView = () => {
     );
 
     const renderReports = () => {
-        const reportData = {
-            S1: {
-                data: [45, 70, 35, 90, 55, 80],
-                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun']
-            },
-            S2: {
-                data: [65, 45, 85, 60, 95, 70],
-                labels: ['Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-            }
-        };
+         const reportData = {
+             S1: {
+                 data: [45, 70, 35, 90, 55, 80],
+                 labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun']
+             },
+             S2: {
+                 data: [65, 45, 85, 60, 95, 70],
+                 labels: ['Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+             }
+         };
+         return (
+             <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        return (
-            <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                 <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 space-y-4">
+                     <div className="flex justify-between items-center">
+                         <h3 className="text-xl font-bold text-gray-900 dark:text-white">Ingresos Mensuales</h3>
+                         <select
+                             value={reportPeriod}
+                             onChange={(e) => setReportPeriod(e.target.value)}
+                             className="bg-gray-50 dark:bg-slate-700 border-none rounded-lg text-xs font-bold p-2 focus:outline-none text-gray-600 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors"
+                         >
+                             <option value="S1">1er Semestre</option>
+                             <option value="S2">2do Semestre</option>
+                         </select>
+                     </div>
 
-                <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 space-y-4">
-                    <div className="flex justify-between items-center">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">Ingresos Mensuales</h3>
-                        <select
-                            value={reportPeriod}
-                            onChange={(e) => setReportPeriod(e.target.value)}
-                            className="bg-gray-50 dark:bg-slate-700 border-none rounded-lg text-xs font-bold p-2 focus:outline-none text-gray-600 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors"
-                        >
-                            <option value="S1">1er Semestre</option>
-                            <option value="S2">2do Semestre</option>
-                        </select>
-                    </div>
+                     <div className="h-80 flex items-end justify-around border-b border-gray-200 dark:border-slate-700 pb-2 relative">
+                         {reportData[reportPeriod].data.map((h, i) => (
+                             <div key={i} className="w-10 h-full flex items-end relative group cursor-pointer">
+                                 <div
+                                     className="absolute bottom-0 left-0 right-0 bg-indigo-500 rounded-t-lg transition-all duration-500 group-hover:bg-indigo-400"
+                                     style={{ height: `${h}%` }}
+                                 ></div>
+                                 <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full text-xs font-bold text-gray-700 dark:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                                     ${h}k
+                                 </span>
+                             </div>
+                         ))}
+                     </div>
+                     <div className="flex justify-around text-xs text-gray-500 dark:text-gray-400 pt-2">
+                         {reportData[reportPeriod].labels.map((l) => (
+                             <span key={l}>{l}</span>
+                         ))}
+                     </div>
+                 </div>
 
-                    <div className="h-80 flex items-end justify-around border-b border-gray-200 dark:border-slate-700 pb-2 relative">
-                        {reportData[reportPeriod].data.map((h, i) => (
-                            <div key={i} className="w-10 h-full flex items-end relative group cursor-pointer">
-                                <div
-                                    className="absolute bottom-0 left-0 right-0 bg-indigo-500 rounded-t-lg transition-all duration-500 group-hover:bg-indigo-400"
-                                    style={{ height: `${h}%` }}
-                                ></div>
-                                <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full text-xs font-bold text-gray-700 dark:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    ${h}k
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="flex justify-around text-xs text-gray-500 dark:text-gray-400 pt-2">
-                        {reportData[reportPeriod].labels.map((l) => (
-                            <span key={l}>{l}</span>
-                        ))}
-                    </div>
-                </div>
+                 <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 space-y-4">
+                     <h3 className="text-xl font-bold text-gray-900 dark:text-white">Fuentes de Leads</h3>
+                     <div className="flex flex-col items-center">
+                         {/* Simple CSS Pie Chart visualization mockup */}
+                         <div className="w-32 h-32 rounded-full my-4 relative"
+                             style={{
+                                 background: `conic-gradient(
+                                     #ef4444 0% 45%, /* Red 45% */
+                                     #f59e0b 45% 70%, /* Amber 25% */
+                                     #10b981 70% 85%, /* Emerald 15% */
+                                     #3b82f6 85% 100% /* Blue 15% */
+                                 )`
+                             }}
+                         >
+                             <div className="absolute inset-4 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center">
+                                 <span className="text-2xl font-bold text-gray-900 dark:text-white">142</span>
+                             </div>
+                         </div>
+                         <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Leads</p>
+                     </div>
 
-                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 space-y-4">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">Fuentes de Leads</h3>
-                    <div className="flex flex-col items-center">
-                        {/* Simple CSS Pie Chart visualization mockup */}
-                        <div className="w-32 h-32 rounded-full my-4 relative"
-                            style={{
-                                background: `conic-gradient(
-                                    #ef4444 0% 45%, /* Red 45% */
-                                    #f59e0b 45% 70%, /* Amber 25% */
-                                    #10b981 70% 85%, /* Emerald 15% */
-                                    #3b82f6 85% 100% /* Blue 15% */
-                                )`
-                            }}
-                        >
-                            <div className="absolute inset-4 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center">
-                                <span className="text-2xl font-bold text-gray-900 dark:text-white">142</span>
-                            </div>
-                        </div>
-                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Leads</p>
-                    </div>
-
-                    <div className="space-y-2">
-                        <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300"><div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-full"></div>LinkedIn</div><span>(45%)</span></div>
-                        <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300"><div className="flex items-center gap-2"><div className="w-3 h-3 bg-amber-500 rounded-full"></div>Referidos</div><span>(25%)</span></div>
-                        <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300"><div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-500 rounded-full"></div>Web</div><span>(15%)</span></div>
-                        <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300"><div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-500 rounded-full"></div>Eventos</div><span>(15%)</span></div>
-                    </div>
-                </div>
-            </div>
-        );
-    };
+                     <div className="space-y-2">
+                         <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300"><div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-500 rounded-full"></div>LinkedIn</div><span>(45%)</span></div>
+                         <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300"><div className="flex items-center gap-2"><div className="w-3 h-3 bg-amber-500 rounded-full"></div>Referidos</div><span>(25%)</span></div>
+                         <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300"><div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-500 rounded-full"></div>Web</div><span>(15%)</span></div>
+                         <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300"><div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-500 rounded-full"></div>Eventos</div><span>(15%)</span></div>
+                     </div>
+                 </div>
+             </div>
+         );
+    }
 
     const renderAutomation = () => (
-        <div className="p-6 space-y-6">
+         <div className="p-6 space-y-6">
 
-            <div className="flex justify-between items-center">
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Flujos de Trabajo</h2>
-                    <p className="text-gray-600 dark:text-gray-400">Automatiza tareas para ahorrar tiempo.</p>
-                </div>
-                <button
-                    onClick={openCreateAutoModal}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/30"
-                >
-                    <Plus className="h-4 w-4" />
-                    Nueva Regla
-                </button>
-            </div>
+             <div className="flex justify-between items-center">
+                 <div>
+                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Flujos de Trabajo</h2>
+                     <p className="text-gray-600 dark:text-gray-400">Automatiza tareas para ahorrar tiempo.</p>
+                 </div>
+                 <button
+                     onClick={openCreateAutoModal}
+                     className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/30"
+                 >
+                     <Plus className="h-4 w-4" />
+                     Nueva Regla
+                 </button>
+             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {automations.map(auto => {
-                    const Icon = auto.icon || Zap;
-                    return (
-                        <div
-                            key={auto.id}
-                            onClick={() => handleEditAutomation(auto.id)}
-                            className={`group p-6 rounded-3xl border transition-all flex items-center gap-5 cursor-pointer ${auto.active
-                                ? 'bg-gray-50 dark:bg-slate-800 border-indigo-100 dark:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-400/50'
-                                : 'bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-700 opacity-70 hover:opacity-100 hover:border-gray-300 dark:hover:border-slate-600'
-                                }`}>
-                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors shrink-0 ${auto.active
-                                ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'
-                                : 'bg-gray-100 text-gray-400 dark:bg-slate-800 dark:text-gray-500'
-                                }`}>
-                                <Icon className="h-7 w-7" />
-                            </div>
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                 {automations.map(auto => {
+                     const Icon = Zap; // Usar Zap por defecto
+                     return (
+                         <div
+                             key={auto.id}
+                             onClick={() => handleEditAutomation(auto.id)}
+                             className={`group p-6 rounded-3xl border transition-all flex items-center gap-5 cursor-pointer ${auto.active
+                                 ? 'bg-gray-50 dark:bg-slate-800 border-indigo-100 dark:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/10 hover:border-indigo-200 dark:hover:border-indigo-400/50'
+                                 : 'bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-700 opacity-70 hover:opacity-100 hover:border-gray-300 dark:hover:border-slate-600'
+                                 }`}>
+                             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors shrink-0 ${auto.active
+                                 ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-400'
+                                 : 'bg-gray-100 text-gray-400 dark:bg-slate-800 dark:text-gray-500'
+                                 }`}>
+                                 <Icon className="h-7 w-7" />
+                             </div>
 
-                            <div className="flex-1 space-y-1 min-w-0">
-                                <p className="text-lg font-bold text-gray-900 dark:text-white truncate">{auto.name}</p>
-                                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">SI: {auto.trigger}</p>
-                                <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 truncate">HACER: {auto.action}</p>
-                            </div>
+                             <div className="flex-1 space-y-1 min-w-0">
+                                 <p className="text-lg font-bold text-gray-900 dark:text-white truncate">{auto.name}</p>
+                                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400">SI: {auto.trigger}</p>
+                                 <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 truncate">HACER: {auto.action}</p>
+                             </div>
 
-                            {/* Controls */}
-                            <div className="flex items-center gap-2 shrink-0">
-                                {/* Toggle Switch */}
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        toggleAutomation(auto.id);
-                                    }}
-                                    className={`w-10 h-6 rounded-full p-1 transition-colors duration-300 shrink-0 focus:outline-none ${auto.active ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-slate-700'}`}
-                                >
-                                    <span className={`block w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${auto.active ? 'translate-x-4' : 'translate-x-0'}`} />
-                                </button>
+                             {/* Controls */}
+                             <div className="flex items-center gap-2 shrink-0">
+                                 {/* Toggle Switch */}
+                                 <button
+                                     onClick={(e) => {
+                                         e.stopPropagation();
+                                         toggleAutomation(auto.id);
+                                     }}
+                                     className={`w-10 h-6 rounded-full p-1 transition-colors duration-300 shrink-0 focus:outline-none ${auto.active ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-slate-700'}`}
+                                 >
+                                     <span className={`block w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${auto.active ? 'translate-x-4' : 'translate-x-0'}`} />
+                                 </button>
 
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleEditAutomation(auto.id);
-                                        }}
-                                        className="p-1.5 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
-                                        title="Editar"
-                                    >
-                                        <Pencil className="h-5 w-5" />
-                                    </button>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDeleteAutomation(auto.id);
-                                        }}
-                                        className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
-                                        title="Eliminar"
-                                    >
-                                        <Trash2 className="h-5 w-5" />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
+                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                     <button
+                                         onClick={(e) => {
+                                             e.stopPropagation();
+                                             handleEditAutomation(auto.id);
+                                         }}
+                                         className="p-1.5 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                                         title="Editar"
+                                     >
+                                         <Pencil className="h-5 w-5" />
+                                     </button>
+                                     <button
+                                         onClick={(e) => {
+                                             e.stopPropagation();
+                                             handleDeleteAutomation(auto.id);
+                                         }}
+                                         className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
+                                         title="Eliminar"
+                                     >
+                                         <Trash2 className="h-5 w-5" />
+                                     </button>
+                                 </div>
+                             </div>
+                         </div>
+                     );
+                 })}
 
-                <button
-                    onClick={openCreateAutoModal}
-                    className="group border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-3xl p-6 flex flex-col items-center justify-center text-gray-400 hover:border-indigo-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-all min-h-[140px]"
-                >
-                    <Plus className="h-8 w-8 mb-2 group-hover:scale-110 transition-transform" />
-                    Crear Nueva Regla
-                </button>
-            </div>
-        </div>
+                 <button
+                     onClick={openCreateAutoModal}
+                     className="group border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-3xl p-6 flex flex-col items-center justify-center text-gray-400 hover:border-indigo-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-all min-h-[140px]"
+                 >
+                     <Plus className="h-8 w-8 mb-2 group-hover:scale-110 transition-transform" />
+                     Crear Nueva Regla
+                 </button>
+             </div>
+         </div>
     );
 
     const renderIntegrations = () => (
-        <div className="p-6 space-y-6">
+         <div className="p-6 space-y-6">
 
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Integraciones</h2>
-                    <p className="text-gray-600 dark:text-gray-400">Conecta tus herramientas.</p>
-                </div>
-            </div>
+             <div className="flex justify-between items-center mb-6">
+                 <div>
+                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Integraciones</h2>
+                     <p className="text-gray-600 dark:text-gray-400">Conecta tus herramientas.</p>
+                 </div>
+             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {integrations.map(integ => {
-                    const Icon = integ.icon;
-                    return (
-                        <div key={integ.id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 space-y-4 flex flex-col">
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                 {integrations.map(integ => {
+                     const Icon = integ.icon || Puzzle;
+                     return (
+                         <div key={integ.id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 space-y-4 flex flex-col">
 
-                            <div className="flex items-center gap-3">
-                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${integ.color}`}>
-                                    <Icon className="h-5 w-5" />
-                                </div>
-                                <h3 className="font-bold text-lg text-gray-900 dark:text-white">{integ.name}</h3>
-                            </div>
+                             <div className="flex items-center gap-3">
+                                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${integ.color}`}>
+                                     <Icon className="h-5 w-5" />
+                                 </div>
+                                 <h3 className="font-bold text-lg text-gray-900 dark:text-white">{integ.name}</h3>
+                             </div>
 
-                            <p className="text-sm text-gray-500 dark:text-gray-400 flex-1">{integ.desc}</p>
+                             <p className="text-sm text-gray-500 dark:text-gray-400 flex-1">{integ.desc}</p>
 
-                            <button className={`w-full py-2.5 rounded-xl text-sm font-bold transition-colors ${integ.connected
-                                ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/30'
-                                : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-600 hover:bg-gray-100'
-                                }`}>
-                                {integ.connected ? 'Conectado' : 'Conectar'}
-                            </button>
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
+                             <button className={`w-full py-2.5 rounded-xl text-sm font-bold transition-colors ${integ.connected
+                                 ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/30'
+                                 : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-600 hover:bg-gray-100'
+                                 }`}>
+                                 {integ.connected ? 'Conectado' : 'Conectar'}
+                             </button>
+                         </div>
+                     );
+                 })}
+             </div>
+         </div>
     );
 
-    return (
-        <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-200">
-            <Sidebar isCollapsed={sidebarCollapsed} onToggleCollapse={toggleSidebar} />
 
+    if (loading) return <div className="p-8 text-center text-indigo-500 font-semibold"><Zap className="h-6 w-6 inline animate-spin mr-2" /> Cargando datos del CRM...</div>;
+    if (error) return <div className="p-8 text-center text-rose-500 font-semibold"><AlertCircle className="h-6 w-6 inline mr-2" /> Error: {error}</div>;
+
+
+    return (
+        <div className="flex flex-col h-full w-full">
             <div className="flex flex-col flex-1 h-full relative transition-all duration-300">
-                <div className="h-full flex flex-col bg-slate-950 text-slate-200">
+                
+                {/* Contenedor Principal de Pestañas (Se ajusta para ocupar 100% de alto) */}
+                <div className="h-full flex flex-col bg-white dark:bg-slate-900/50 rounded-[1.5rem] shadow-xl shadow-slate-900/50 overflow-hidden">
+                    
                     {/* Header Navigation */}
-                    <div className="p-4 bg-slate-950 text-slate-200 border-b border-gray-200 dark:border-slate-800 sticky top-0 z-20">
+                    <div className="p-4 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md text-slate-200 border-b border-gray-200 dark:border-slate-800 sticky top-0 z-20 shrink-0">
                         <div className="flex items-center gap-2 overflow-x-auto pb-1">
                             {[
                                 { id: 'PIPELINE', label: 'Tablero', icon: Layout },
@@ -838,8 +875,8 @@ export const CRMView = () => {
                                         key={tab.id}
                                         onClick={() => setActiveTab(tab.id)}
                                         className={`flex items-center gap-2 px-5 py-2.5 rounded-[1.5rem] text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab.id
-                                            ? 'bg-slate-800 text-white dark:bg-white dark:text-slate-900 shadow-md'
-                                            : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800'
+                                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/30' // Estilo activo
+                                            : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800' // Estilo inactivo
                                             }`}
                                     >
                                         <Icon className="h-5 w-5" />
@@ -850,7 +887,7 @@ export const CRMView = () => {
                         </div>
                     </div>
 
-                    {/* Main Content Area */}
+                    {/* Main Content Area (Scrollable) */}
                     <div className="flex-1 overflow-y-auto">
                         {activeTab === 'PIPELINE' && renderPipeline()}
                         {activeTab === 'WON' && renderWonClients()}
@@ -861,10 +898,11 @@ export const CRMView = () => {
                     </div>
 
 
-                    {/* New Deal Modal Overlay */}
+                    {/* New Deal Modal Overlay (se mantiene, pero la acción usa POST) */}
                     {isFormOpen && (
                         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 ">
                             <form onSubmit={handleAddTask} className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-lg w-full">
+                                {/* ... (Contenido del formulario) ... */}
                                 <div className="p-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
                                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Nuevo Trato</h2>
                                     <button type="button" onClick={() => setIsFormOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-gray-400 transition-colors">
@@ -894,12 +932,14 @@ export const CRMView = () => {
 
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">Prioridad</label>
-                                            <select value={newTask.priority} onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })} className="w-full px-5 py-3 bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none cursor-pointer">
-                                                <option value="LOW">Baja</option>
-                                                <option value="MEDIUM">Media</option>
-                                                <option value="HIGH">Alta</option>
-                                            </select>
-                                            <ChevronDown className="h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+                                            <div className="relative">
+                                                <select value={newTask.priority} onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })} className="w-full px-5 py-3 bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none cursor-pointer">
+                                                    <option value="LOW">Baja</option>
+                                                    <option value="MEDIUM">Media</option>
+                                                    <option value="HIGH">Alta</option>
+                                                </select>
+                                                <ChevronDown className="h-4 w-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+                                            </div>
                                         </div>
                                     </div>
 
@@ -918,7 +958,8 @@ export const CRMView = () => {
                         </div>
                     )}
 
-                    {/* Automation Form Modal */}
+                    {/* Automation Form Modal (se mantiene, la acción usa POST/PUT) */}
+                    
                     {isAutoFormOpen && (
                         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                             <form onSubmit={handleSaveAutomation} className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-lg w-full">
@@ -957,6 +998,7 @@ export const CRMView = () => {
                         </div>
                     )}
 
+
                     {/* Celebration Overlay */}
                     {showCelebration && (
                         <div className="fixed inset-0 bg-emerald-500/30 backdrop-blur-md flex items-center justify-center z-[60]">
@@ -968,7 +1010,7 @@ export const CRMView = () => {
                         </div>
                     )}
 
-                    {/* Task Details Modal (FULLY EDITABLE) */}
+                    {/* Task Details Modal (se mantiene, las acciones usan PUT) */}
                     {selectedTask && (
                         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                             <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
@@ -979,15 +1021,13 @@ export const CRMView = () => {
                                         {COLUMNS.map((col, index) => {
                                             const isActive = selectedTask.status === col.id;
                                             const isCompleted = COLUMNS.findIndex(c => c.id === selectedTask.status) > index;
-                                            const isBeforeActive = COLUMNS.findIndex(c => c.id === selectedTask.status) < index; // New condition
-
                                             return (
                                                 <div key={col.id}
                                                     onClick={() => updateTaskProperty(selectedTask.id, 'status', col.id)}
                                                     className={`flex-1 flex flex-col items-center cursor-pointer group relative ${index < COLUMNS.length - 1 ? 'pr-4' : ''}`}
                                                 >
                                                     <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all mb-2 z-10 relative
-                                            ${isActive ? 'bg-indigo-600 border-indigo-600 text-white scale-110 shadow-lg shadow-indigo-500/30' :
+                                                                        ${isActive ? 'bg-indigo-600 border-indigo-600 text-white scale-110 shadow-lg shadow-indigo-500/30' :
                                                             isCompleted ? 'bg-emerald-500 border-emerald-500 text-white' :
                                                                 'bg-white dark:bg-slate-900 border-gray-300 dark:border-slate-600 text-gray-300'}`}
                                                     >
@@ -998,7 +1038,7 @@ export const CRMView = () => {
                                                     {/* Connecting Line */}
                                                     {index < COLUMNS.length - 1 && (
                                                         <div className={`absolute top-4 right-0 w-full h-0.5 -translate-y-1/2 -z-0 transition-colors
-                                                ${isCompleted ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-slate-700'}`}
+                                                                            ${isCompleted ? 'bg-emerald-500' : 'bg-gray-200 dark:bg-slate-700'}`}
                                                         />
                                                     )}
                                                 </div>
@@ -1183,4 +1223,5 @@ export const CRMView = () => {
         </div>
     );
 };
+
 export default CRMView;

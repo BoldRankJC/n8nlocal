@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import Header from '../../components/ui/Header'; 
-import Sidebar from '../../components/ui/Sidebar'; 
+import Header from '../../components/ui/Header';
+import Sidebar from '../../components/ui/Sidebar';
 import {
     BarChart3, PieChart, Activity, ArrowUpRight, ArrowDownRight,
     Users, Wallet, Award, Target, Briefcase
@@ -14,21 +14,16 @@ export const DashboardPlaceholder = () => {
     };
 
     return (
-        // 1. Fondo Global: Slate 950 para coincidir con el estilo "Boosted"
-        <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-200">
-
-            <Sidebar isCollapsed={sidebarCollapsed} onToggleCollapse={toggleSidebar} />
-
-            {/* Contenedor Principal */}
+        <div className="flex flex-col h-full w-full">
             <div className="flex flex-col flex-1 h-full transition-all duration-300 relative">
-                
+
                 {/* 2. CORRECCIÓN DE ESPACIO: 
                    - 'p-6 md:p-8': Agrega margen interno para que el contenido no toque los bordes.
                    - 'overflow-y-auto': El scroll ocurre aquí dentro.
                 */}
-                <div className="flex-1 h-full overflow-y-auto p-6 md:p-8 custom-scrollbar">
-                    
-                    <div className="space-y-8 max-w-8xl mx-auto"> 
+                <div className="flex-1 h-full p-6 md:p-8 custom-scrollbar">
+
+                    <div className="space-y-8 max-w-8xl mx-auto">
                         {/* Header Section */}
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
@@ -55,8 +50,7 @@ export const DashboardPlaceholder = () => {
                                         <div className={`p-3.5 rounded-2xl ${stat.bgIcon} ${stat.color} shadow-sm group-hover:scale-110 transition-transform`}>
                                             <stat.icon size={22} strokeWidth={2.5} />
                                         </div>
-                                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 ${
-                                            stat.trend === 'up' && !stat.color.includes('rose') ? 'bg-emerald-500/10 text-emerald-400' :
+                                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 ${stat.trend === 'up' && !stat.color.includes('rose') ? 'bg-emerald-500/10 text-emerald-400' :
                                             stat.trend === 'down' && stat.color.includes('rose') ? 'bg-emerald-500/10 text-emerald-400' :
                                                 'bg-rose-500/10 text-rose-400'
                                             }`}>

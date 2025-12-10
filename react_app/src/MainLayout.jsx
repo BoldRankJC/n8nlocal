@@ -1,58 +1,101 @@
-import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, Sun, Moon, Settings } from 'lucide-react';
-import Sidebar from './components/ui/Sidebar'; // Asegúrate de que la ruta sea correcta
-import { NotificationsPanel } from './components/ui/NotificationsCard'; // Tu componente existente
-import { SettingsModal } from './components/ui/SettingsModal'; // Si lo tienes
+import React, { useState, useEffect, useCallback } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom'; // Usaremos Outlet para renderizar las vistas hijas
+import Header from './components/ui/Header'; 
+import Sidebar from './components/ui/Sidebar'; 
+import { SettingsModal } from './components/ui/SettingsModal'; // Ajusta la ruta
+import { ViewState } from './types'; // Ajusta la ruta (Si usas un archivo types.js)
+import { Bell, HelpCircle, Settings, Sun, Moon } from 'lucide-react'; // Para el Header
 
-const MainLayout = () => {
-    const location = useLocation();
+// Mock/Default User
+const MOCK_USER = { 
+    name: sessionStorage.getItem("user") || 'Dev User', 
+    email: sessionStorage.getItem("email") || 'dev.user@boosted.com', 
+    role: 'Admin' 
+};
+
+// Mock de ViewState si no tienes un archivo 'types.js'
+const LocalViewState = {
+    DASHBOARD: 'Dashboard',
+    USERS: 'Users',
+    CHATBOT: 'Asistente IA',
+    CRM: 'CRM Boosted',
+    ERP: 'ERP System',
+    SUPPORT: 'Soporte',
+    NOTIFICATIONS: 'Notificaciones'
+};
+
+const DashboardLayout = () => {
     const navigate = useNavigate();
-
-    // --- Estados Visuales (Copiados del App rígido) ---
-    const [isDarkMode, setIsDarkMode] = useState(false);
+    
+    // --- ESTADOS GLOBALES ---
+    const [currentUser, setCurrentUser] = useState(MOCK_USER);
+    const [currentView, setCurrentView] = useState(LocalViewState.CHATBOT); // Default view
+    const [isDarkMode, setIsDarkMode] = useState(() => {
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    });
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // Estado para el Sidebar
-    
-    // --- Mock Data (O puedes usar Context/Redux) ---
-    const currentUser = JSON.parse(sessionStorage.getItem('userData')) || { name: 'Admin', email: 'admin@boosted.com' };
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+    // --- ESTADOS DE NOTIFICACIONES ---
     const [notifications, setNotifications] = useState([
-        { id: '1', title: 'Bienvenido', message: 'Sistema iniciado correctamente.', timestamp: new Date(), read: false, type: 'success', priority: 'low' }
+        { id: '1', title: 'Nómina Aprobada', message: 'Tu pago ha sido procesado.', time: 'Hace 10 min', read: false, type: 'success' },
+        { id: '2', title: 'Recordatorio Evaluación', message: 'Tienes pendiente completar tu autoevaluación.', time: 'Hace 2 horas', read: false, type: 'warning' },
     ]);
 
-    // Check system preference
-    useEffect(() => {
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            setIsDarkMode(true);
-        }
-    }, []);
+    // --- FUNCIONES Y MANEJADORES ---
 
-    const toggleTheme = () => setIsDarkMode(!isDarkMode);
+    const toggleTheme = useCallback(() => {
+        setIsDarkMode(prev => !prev);
+    }, []);
+    
     const handleLogout = () => {
+        // Lógica de logout real (limpiar sessionStorage, etc.)
         sessionStorage.clear();
         navigate('/login');
     };
 
-    // --- Lógica para el Título Dinámico basado en la Ruta ---
-    const getPageTitle = (path) => {
-        switch (path) {
-            case '/': return 'Panel Principal';
-            case '/chatbot': return 'Asistente IA';
-            case '/users': return 'Gestión de Usuarios';
-            case '/support-portal': return 'Centro de Soporte';
-            case '/request-tracking': return 'Seguimiento de Solicitudes';
-            case '/set-password': return 'Configuración de Cuenta';
-            default: return 'Portal Boosted';
-        }
-    };
+    const markAllRead = useCallback(() => {
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    }, []);
 
+    const markRead = useCallback((id) => {
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    }, []);
+
+    const handleViewAllNotifications = useCallback(() => {
+        setIsNotifOpen(false);
+        // Usaríamos setCurrentView si las notificaciones fueran una vista
+        // navigate('/notifications'); // O navegamos a la ruta específica
+    }, []);
+    
     const unreadCount = notifications.filter(n => !n.read).length;
 
+    // Efecto para aplicar la clase Dark/Light
+    useEffect(() => {
+        const bodyClass = document.body.classList;
+        if (isDarkMode) {
+            bodyClass.add('dark');
+        } else {
+            bodyClass.remove('dark');
+        }
+    }, [isDarkMode]);
+    
+    // Función para que el Sidebar pueda cambiar la vista (y actualizar el Header)
+    const handleChangeView = (newView) => {
+        setCurrentView(newView);
+        // Opcional: Navegar con el router si las vistas tienen rutas dinámicas
+        // navigate(`/${newView.toLowerCase().replace(/\s/g, '-')}`);
+    };
+
+    // Función que el Sidebar usará para colapsar
+    const toggleSidebar = () => {
+        setSidebarCollapsed(!sidebarCollapsed);
+    };
+
     return (
-        <div className={`${isDarkMode ? 'dark' : ''} flex h-screen overflow-hidden bg-background text-foreground`}>
-            
-            {/* 1. Fondo Animado (Copiado de tu diseño) */}
+        <div className={`${isDarkMode ? 'dark' : ''} flex h-screen overflow-hidden`}>
+            {/* Main Background y Gradientes */}
             <div className="fixed inset-0 bg-[#f8fafc] dark:bg-[#0f172a] z-0 transition-colors duration-500">
                 <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-indigo-200/20 dark:bg-indigo-900/10 blur-[100px] pointer-events-none"></div>
                 <div className="absolute bottom-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-purple-200/20 dark:bg-purple-900/10 blur-[100px] pointer-events-none"></div>
@@ -60,87 +103,53 @@ const MainLayout = () => {
 
             <div className="flex h-full w-full relative z-10 font-sans text-gray-600 dark:text-gray-300">
                 
-                {/* 2. Sidebar (Le pasamos los estados de colapso) */}
-                <Sidebar 
-                    isCollapsed={sidebarCollapsed} 
-                    onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)} 
+                {/* 1. Sidebar (Lateral Izquierda Estática) */}
+                <Sidebar
+                    currentView={currentView}
+                    onChangeView={handleChangeView}
+                    onLogout={handleLogout}
+                    // Pasar el estado de colapso y el toggle si tu Sidebar lo soporta
                 />
 
-                {/* 3. Contenedor Principal (Ajusta el margen según el sidebar) */}
-                <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-[300px]'}`}>
+                {/* 2. Main Content (Contenedor de Header y Vistas) */}
+                <div className="flex-1 flex flex-col min-w-0 transition-colors duration-300">
 
-                    {/* Top Bar / Header */}
-                    <header className="h-24 flex items-center justify-between px-8 md:px-10 sticky top-0 z-10 shrink-0">
-                        <div className="flex flex-col justify-center">
-                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight capitalize fade-in">
-                                {getPageTitle(location.pathname)}
-                            </h1>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                                {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
-                            </p>
-                        </div>
+                    {/* 2.A. Header (Superior Estática) */}
+                    <Header
+                        currentView={currentView}
+                        currentUser={currentUser}
+                        isDarkMode={isDarkMode}
+                        toggleTheme={toggleTheme}
+                        isNotifOpen={isNotifOpen}
+                        setIsNotifOpen={setIsNotifOpen}
+                        isSettingsOpen={isSettingsOpen}
+                        setIsSettingsOpen={setIsSettingsOpen}
+                        notifications={notifications}
+                        unreadCount={unreadCount}
+                        markAllRead={markAllRead}
+                        markRead={markRead}
+                        handleViewAllNotifications={handleViewAllNotifications}
+                    />
 
-                        {/* Acciones Derecha (Tema, Notificaciones, User) */}
-                        <div className="flex items-center justify-end gap-3 bg-white/60 dark:bg-slate-800/60 backdrop-blur-md p-1.5 rounded-full border border-white/50 dark:border-white/5 shadow-sm">
-                            <button onClick={toggleTheme} className="p-2.5 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-all text-gray-500 dark:text-gray-400">
-                                {isDarkMode ? <Moon size={18} /> : <Sun size={18} />}
-                            </button>
-                            
-                            <div className="w-px h-6 bg-gray-200 dark:bg-slate-700"></div>
-
-                            {/* Notificaciones */}
-                            <div className="relative">
-                                <button
-                                    onClick={() => setIsNotifOpen(!isNotifOpen)}
-                                    className={`p-2.5 rounded-full transition-all relative ${isNotifOpen ? 'bg-white dark:bg-slate-700 text-indigo-600' : 'text-gray-500 hover:bg-white dark:hover:bg-slate-700'}`}
-                                >
-                                    <Bell size={18} />
-                                    {unreadCount > 0 && (
-                                        <span className="absolute top-2 right-2.5 w-2 h-2 bg-rose-500 rounded-full border border-white dark:border-slate-800 animate-pulse"></span>
-                                    )}
-                                </button>
-
-                                {isNotifOpen && (
-                                    <NotificationsPanel
-                                        user={currentUser.email}
-                                        onClose={() => setIsNotifOpen(false)}
-                                        onUnreadChange={() => {}} // Opcional si manejas estado global
-                                        onViewAll={() => navigate('/notifications')}
-                                    />
-                                )}
-                            </div>
-
-                            <button onClick={() => setIsSettingsOpen(true)} className="p-2.5 text-gray-500 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-all">
-                                <Settings size={18} />
-                            </button>
-
-                            <div className="w-px h-6 bg-gray-200 dark:bg-slate-700"></div>
-
-                            <button onClick={handleLogout} className="pr-4 pl-2.5 py-1 flex items-center gap-3 hover:bg-white dark:hover:bg-slate-700 rounded-full transition-all">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 text-white flex items-center justify-center text-xs font-bold border-2 border-white dark:border-slate-800 shadow-sm">
-                                    {currentUser.name?.charAt(0) || 'A'}
-                                </div>
-                                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 hidden md:block">
-                                    {currentUser.name}
-                                </span>
-                            </button>
-                        </div>
-                    </header>
-
-                    {/* 4. AQUÍ OCURRE LA MAGIA: <Outlet /> */}
-                    {/* Este componente renderiza la ruta hija (Users, Chatbot, etc.) dentro de este layout */}
-                    <main className="flex-1 p-4 md:p-8 pt-0 overflow-hidden flex flex-col">
-                        <div className="h-full w-full max-w-[1600px] mx-auto fade-in">
-                             <Outlet /> 
+                    {/* 2.B. Dynamic Content Container (Contenido de Routes) */}
+                    <main className="flex-1 p-4 md:p-8 pt-0 overflow-y-auto">
+                        <div className="h-full w-full max-w-[1600px] mx-auto">
+                            {/* Aquí se renderiza el componente específico de la ruta actual */}
+                            <Outlet />
                         </div>
                     </main>
 
-                    {/* Modales Globales */}
-                    {isSettingsOpen && <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />}
+                    {/* 3. Settings Modal (Overlay) */}
+                    <SettingsModal
+                        isOpen={isSettingsOpen}
+                        onClose={() => setIsSettingsOpen(false)}
+                        currentUser={currentUser}
+                        isDarkMode={isDarkMode}
+                        toggleTheme={toggleTheme}
+                    />
                 </div>
             </div>
         </div>
     );
 };
-
-export default MainLayout;
+export default DashboardLayout;
