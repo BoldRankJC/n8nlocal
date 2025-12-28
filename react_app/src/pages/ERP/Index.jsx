@@ -89,7 +89,7 @@ const ERPView = () => {
 
 
     return (
-        <div className="flex flex-col h-full w-full">
+        <div className="flex flex-col w-full">
             <div className="h-full flex flex-col bg-gray-50 dark:bg-slate-900">
                 {/* Header Navigation */}
                 <div className="p-4 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 sticky top-0 z-5">
