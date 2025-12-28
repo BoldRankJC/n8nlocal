@@ -1,0 +1,331 @@
+{
+    "tasks": [
+        {
+            "id": "1",
+            "title": "Licencia Enterprise Q3",
+            "description": "Negociar renovación de licencia anual para 500 usuarios.",
+            "status": "IN_PROGRESS",
+            "priority": "HIGH",
+            "assignee": "AL",
+            "dueDate": "25 Feb",
+            "tags": [
+                "Ventas",
+                "Renovación"
+            ],
+            "client": "TechCorp Global",
+            "dealValue": 45000,
+            "score": 75,
+            "scoringCriteria": {
+                "budget": true,
+                "authority": true,
+                "need": true,
+                "timing": false
+            },
+            "comments": [
+                {
+                    "id": "c1",
+                    "user": "Juan Perez",
+                    "text": "El cliente pidió 10% de descuento.",
+                    "time": "Hace 2h"
+                }
+            ]
+        },
+        {
+            "id": "2",
+            "title": "Implementación CRM",
+            "description": "Coordinar reunión de kickoff con el equipo técnico.",
+            "status": "TODO",
+            "priority": "MEDIUM",
+            "assignee": "JD",
+            "dueDate": "15 Feb",
+            "tags": [
+                "Servicios"
+            ],
+            "client": "Banco Futuro",
+            "dealValue": 12500,
+            "score": 80,
+            "scoringCriteria": {
+                "budget": true,
+                "authority": false,
+                "need": true,
+                "timing": false
+            },
+            "comments": []
+        },
+        {
+            "id": "1765340098209",
+            "title": "Recordatorios Acciona",
+            "description": "",
+            "status": "REVIEW",
+            "priority": "HIGH",
+            "assignee": "YO",
+            "dueDate": "Por definir",
+            "tags": [
+                "Nuevo"
+            ],
+            "client": "Acciona Centro de Negocios ltda",
+            "dealValue": 500000,
+            "comments": [],
+            "score": 60,
+            "scoringCriteria": {
+                "budget": false,
+                "authority": false,
+                "need": false,
+                "timing": false
+            }
+        },
+        {
+            "id": "1766856814547",
+            "title": "Licencia semestral",
+            "description": "ninguno",
+            "status": "TODO",
+            "priority": "HIGH",
+            "assignee": "YO",
+            "dueDate": "Por definir",
+            "tags": [
+                "Nuevo"
+            ],
+            "client": "Empresa Ejem. S.A",
+            "dealValue": 15000,
+            "comments": [],
+            "score": 0,
+            "scoringCriteria": {
+                "budget": false,
+                "authority": false,
+                "need": false,
+                "timing": false
+            }
+        },
+        {
+            "id": "1766878454680",
+            "title": "Licencia semestral",
+            "description": "123",
+            "status": "TODO",
+            "priority": "HIGH",
+            "assignee": "YO",
+            "dueDate": "Por definir",
+            "tags": [
+                "Nuevo"
+            ],
+            "client": "aaa",
+            "dealValue": 200,
+            "comments": [],
+            "score": 0,
+            "scoringCriteria": {
+                "budget": false,
+                "authority": false,
+                "need": false,
+                "timing": false
+            }
+        },
+        {
+            "id": "1766885839835",
+            "title": "a",
+            "description": "2",
+            "status": "TODO",
+            "priority": "HIGH",
+            "assignee": "YO",
+            "dueDate": "Por definir",
+            "tags": [
+                "Nuevo"
+            ],
+            "client": "b",
+            "dealValue": 222,
+            "comments": [],
+            "score": 0,
+            "scoringCriteria": {
+                "budget": false,
+                "authority": false,
+                "need": false,
+                "timing": false
+            }
+        },
+        {
+            "id": "1766885888877",
+            "title": "abcd",
+            "description": "123",
+            "status": "TODO",
+            "priority": "LOW",
+            "assignee": "YO",
+            "dueDate": "Por definir",
+            "tags": [
+                "Nuevo"
+            ],
+            "client": "as",
+            "dealValue": 2000,
+            "comments": [],
+            "score": 0,
+            "scoringCriteria": {
+                "budget": false,
+                "authority": false,
+                "need": false,
+                "timing": false
+            }
+        }
+    ],
+    "wonDeals": [
+        {
+            "id": "4",
+            "title": "Suscripción Startup",
+            "description": "Onboarding completado exitosamente.",
+            "status": "DONE",
+            "priority": "LOW",
+            "assignee": "AL",
+            "dueDate": "10 Feb",
+            "tags": [
+                "Onboarding"
+            ],
+            "client": "Green Energy",
+            "dealValue": 2500,
+            "score": 100,
+            "scoringCriteria": {
+                "budget": true,
+                "authority": true,
+                "need": true,
+                "timing": true
+            },
+            "comments": []
+        },
+        {
+            "id": "1765340883958",
+            "title": "1213",
+            "description": "123 123",
+            "status": "DONE",
+            "priority": "HIGH",
+            "assignee": "YO",
+            "dueDate": "Por definir",
+            "tags": [
+                "Nuevo",
+                "hola"
+            ],
+            "client": "123",
+            "dealValue": 123,
+            "comments": [],
+            "score": 100,
+            "scoringCriteria": {
+                "budget": false,
+                "authority": false,
+                "need": false,
+                "timing": false
+            },
+            "closedDate": "2025-12-10T04:29:32.648Z"
+        },
+        {
+            "id": "1765374528725",
+            "title": "Redes Sociales ",
+            "description": "administración instagram y linkedin",
+            "status": "DONE",
+            "priority": "HIGH",
+            "assignee": "YO",
+            "dueDate": "Por definir",
+            "tags": [
+                "Nuevo"
+            ],
+            "client": "Beltrán y Guzmán",
+            "dealValue": 200000,
+            "comments": [],
+            "score": 100,
+            "scoringCriteria": {
+                "budget": false,
+                "authority": false,
+                "need": false,
+                "timing": false
+            },
+            "closedDate": "2025-12-10T13:52:17.892Z"
+        }
+    ],
+    "contacts": [
+        {
+            "id": 1,
+            "name": "Roberto Gomez",
+            "role": "CTO",
+            "company": "TechCorp Global",
+            "email": "roberto@techcorp.com",
+            "status": "Prospecto",
+            "lastContact": "Ayer",
+            "tickets": 0
+        },
+        {
+            "id": 2,
+            "name": "Maria Ferrera",
+            "role": "Gerente RRHH",
+            "company": "Banco Futuro",
+            "email": "mferrera@bancofuturo.com",
+            "status": "Prospecto",
+            "lastContact": "Hace 3 días",
+            "tickets": 2
+        },
+        {
+            "id": 3,
+            "name": "Luis Silva",
+            "role": "CEO",
+            "company": "Innovate SpA",
+            "email": "lsilva@innovate.cl",
+            "status": "Cliente",
+            "lastContact": "Hace 1 semana",
+            "tickets": 0
+        },
+        {
+            "id": 4,
+            "name": "Ana Torres",
+            "role": "Jefe Operaciones",
+            "company": "Green Energy",
+            "email": "ana@green.com",
+            "status": "Cliente",
+            "lastContact": "Hoy",
+            "tickets": 1
+        }
+    ],
+    "automations": [
+        {
+            "id": 1,
+            "name": "Bienvenida Nuevo Lead",
+            "trigger": "Nuevo Trato Creado",
+            "action": "Enviar Email de Bienvenida",
+            "active": true,
+            "icon": "Mail"
+        },
+        {
+            "id": 2,
+            "name": "Alerta de Estancamiento",
+            "trigger": "Sin actividad por 5 días",
+            "action": "Notificar al Vendedor",
+            "active": true,
+            "icon": "AlertCircle"
+        }
+    ],
+    "integrations": [
+        {
+            "id": 1,
+            "name": "Google Workspace",
+            "desc": "Sincroniza emails y calendario.",
+            "connected": true,
+            "icon": "Mail",
+            "color": "text-red-500 bg-red-50 dark:bg-red-900/20"
+        },
+        {
+            "id": 2,
+            "name": "Slack",
+            "desc": "Notificaciones de equipo en tiempo real.",
+            "connected": true,
+            "icon": "Slack",
+            "color": "text-purple-500 bg-purple-50 dark:bg-purple-900/20"
+        },
+        {
+            "id": 3,
+            "name": "Zoom",
+            "desc": "Genera links de reuniones automáticamente.",
+            "connected": false,
+            "icon": "Phone",
+            "color": "text-blue-500 bg-blue-50 dark:bg-blue-900/20"
+        },
+        {
+            "id": 4,
+            "name": "ERP / Nómina",
+            "desc": "Sincroniza datos de facturación.",
+            "connected": false,
+            "icon": "Database",
+            "color": "text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
+        }
+    ]
+}

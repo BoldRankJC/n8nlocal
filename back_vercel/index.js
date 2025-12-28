@@ -18,8 +18,9 @@ app.use(cors());
 app.use(express.json());
 
 // Configurar conexión a MongoDB (desde variable de entorno o local por defecto)
-const mongoUri = process.env.MONGO_URI || "mongodb://localhost:27017/n8n_local";
-console.log("Intentando conectar a MongoDB con URI:", mongoUri);
+// Docker MongoDB usa autenticación: root:example
+const mongoUri = process.env.MONGO_URI || "mongodb://root:example@localhost:27017/n8n_local?authSource=admin";
+console.log("Intentando conectar a MongoDB con URI:", mongoUri.replace(/:[^:@]+@/, ':****@'));
 
 const client = new MongoClient(mongoUri);
 let db;
