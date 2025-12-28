@@ -10,7 +10,9 @@ import {
 
 import { API_BASE_URL as BASE_URL } from '../../config';
 
-const API_BASE_URL = `${BASE_URL}/api/crm`;
+const API_BASE_URL = `http://localhost:3000/api/crm`;
+//const API_BASE_URL = `${BASE_URL}/api/crm`;
+
 
 // Definición de constantes para el Kanban
 const COLUMNS = [
@@ -55,7 +57,7 @@ export const CRMView = () => {
             const response = await fetch(`${API_BASE_URL}`);
             if (!response.ok) throw new Error('Error al cargar datos del CRM.');
             const data = await response.json();
-
+            console.log(data);
             setTasks(data.tasks || []);
             setWonDeals(data.wonDeals || []);
             setContacts(data.contacts || []);
