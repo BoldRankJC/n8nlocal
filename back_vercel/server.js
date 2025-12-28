@@ -1,8 +1,14 @@
 require('dotenv').config();
 const app = require('./index');
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+try {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    }).on('error', (err) => {
+        console.error("❌ Error al iniciar el servidor:", err);
+    });
+} catch (err) {
+    console.error("❌ Excepción fatal al iniciar servidor:", err);
+}
