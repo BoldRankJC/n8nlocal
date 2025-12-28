@@ -8,6 +8,7 @@ const mailRoutes = require("./endpoints/mail");
 const noti = require("./endpoints/notificaciones");
 const menu = require("./endpoints/web");
 const crm = require("./endpoints/crm");
+const erp = require("./endpoints/erp");
 
 const app = express();
 //actualizando
@@ -46,6 +47,7 @@ app.use("/api/mail", mailRoutes);
 app.use("/api/noti", noti);
 app.use("/api/menu", menu);
 app.use("/api/crm", crm);
+app.use("/api/erp", erp);
 
 // Ruta base
 app.get("/", (req, res) => {

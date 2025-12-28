@@ -23,11 +23,11 @@ import { AutomationFormModal } from './components/modals/AutomationFormModal';
 import { TaskDetailsModal } from './components/modals/TaskDetailsModal';
 
 // Logic Hook
-import { useCRM } from './hooks/useCRM';
+import { useERP } from './hooks/useERP';
 
 const CRMView = () => {
     // --- HOOK ---
-    const crm = useCRM();
+    const erp = useERP();
 
     // --- UI STATE ---
     const [activeTab, setActiveTab] = useState('PIPELINE');
@@ -49,25 +49,25 @@ const CRMView = () => {
     // --- VIEW HANDLERS (Bridging UI and Data) ---
 
     const handleCreateDealWrapper = async (data) => {
-        const success = await crm.handleAddTask(data);
+        const success = await erp.handleAddTask(data);
         if (success) setIsFormOpen(false);
     }
 
     const handleMoveToWonWrapper = (taskId) => {
-        crm.handleMoveToWon(taskId, () => {
+        erp.handleMoveToWon(taskId, () => {
             setSelectedTask(null);
             if (activeTab === 'PIPELINE') setActiveTab('WON');
         });
     };
 
     const handleDeleteDealWrapper = async (id) => {
-        const success = await crm.handleDeleteDeal(id);
+        const success = await erp.handleDeleteDeal(id);
         if (success) setSelectedDeal(null);
     }
 
     // Automation UI Handlers
     const handleEditAutomationUI = (id) => {
-        const auto = crm.automations.find(a => a.id === id);
+        const auto = erp.automations.find(a => a.id === id);
         if (auto) {
             setNewAutoData({ name: auto.name, trigger: auto.trigger, action: auto.action });
             setEditingAutoId(id);
@@ -82,7 +82,7 @@ const CRMView = () => {
     };
 
     const handleSaveAutomationWrapper = (data) => {
-        crm.handleSaveAutomation(data, editingAutoId);
+        erp.handleSaveAutomation(data, editingAutoId);
         setEditingAutoId(null);
         setIsAutoFormOpen(false);
     };
@@ -126,8 +126,8 @@ const CRMView = () => {
                 <div className="flex-1 overflow-y-auto">
                     {activeTab === 'PIPELINE' && (
                         <PipelineView
-                            tasks={crm.tasks}
-                            stats={crm.stats}
+                            tasks={erp.tasks}
+                            stats={erp.stats}
                             onMoveToWon={handleMoveToWonWrapper}
                             onNewDealClick={() => setIsFormOpen(true)}
                             onTaskClick={setSelectedTask}
@@ -135,22 +135,22 @@ const CRMView = () => {
                     )}
                     {activeTab === 'WON' && (
                         <WonDealsView
-                            wonDeals={crm.wonDeals}
-                            showCelebration={crm.showCelebration}
+                            wonDeals={erp.wonDeals}
+                            showCelebration={erp.showCelebration}
                         />
                     )}
                     {activeTab === 'CONTACTS' && (
                         <ContactsView
-                            contacts={crm.contacts}
+                            contacts={erp.contacts}
                             onNewContactClick={() => setIsNewContactModalOpen(true)}
                             setSelectedContact={setSelectedContact}
                         />
                     )}
                     {activeTab === 'COMPANIES' && (
                         <CompaniesView
-                            companies={crm.companies}
-                            tasks={crm.tasks}
-                            contacts={crm.contacts}
+                            companies={erp.companies}
+                            tasks={erp.tasks}
+                            contacts={erp.contacts}
                             onNewCompanyClick={() => setIsNewCompanyModalOpen(true)}
                             setSelectedCompany={setSelectedCompany}
                         />
@@ -159,17 +159,17 @@ const CRMView = () => {
                     {activeTab === 'LAUNCHPAD' && <BoostedLaunchpad />}
                     {activeTab === 'AUTOMATION' && (
                         <AutomationsView
-                            automations={crm.automations}
+                            automations={erp.automations}
                             onEditAutomation={handleEditAutomationUI}
-                            onDeleteAutomation={crm.handleDeleteAutomation}
-                            onToggleAutomation={crm.toggleAutomation}
+                            onDeleteAutomation={erp.handleDeleteAutomation}
+                            onToggleAutomation={erp.toggleAutomation}
                             onNewAutomationClick={openCreateAutoModal}
                         />
                     )}
                     {activeTab === 'INTEGRATIONS' && (
                         <IntegrationsView
-                            integrations={crm.integrations}
-                            setIntegrations={crm.setIntegrations}
+                            integrations={erp.integrations}
+                            setIntegrations={erp.setIntegrations}
                         />
                     )}
                 </div>
@@ -192,12 +192,12 @@ const CRMView = () => {
                 <TaskDetailsModal
                     task={selectedTask}
                     onClose={() => setSelectedTask(null)}
-                    onUpdate={crm.handleUpdateTask}
+                    onUpdate={erp.handleUpdateTask}
                     onMoveToWon={handleMoveToWonWrapper}
                 />
 
                 {/* Celebration Overlay */}
-                {crm.showCelebration && (
+                {erp.showCelebration && (
                     <div className="fixed inset-0 bg-emerald-500/30 backdrop-blur-md flex items-center justify-center z-[60]">
                         <div className="text-center p-10 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border-4 border-emerald-500 animate-pulse">
                             <Trophy className="h-16 w-16 text-emerald-500 mx-auto mb-4 animate-bounce" />
@@ -212,7 +212,7 @@ const CRMView = () => {
                     <DealDetailModal
                         deal={selectedDeal}
                         onClose={() => setSelectedDeal(null)}
-                        onUpdate={crm.handleUpdateDeal}
+                        onUpdate={erp.handleUpdateDeal}
                         onDelete={handleDeleteDealWrapper}
                     />
                 )}
@@ -220,34 +220,34 @@ const CRMView = () => {
                 {selectedContact && (
                     <ContactDetailModal
                         contact={selectedContact}
-                        deals={crm.tasks}
+                        deals={erp.tasks}
                         onClose={() => setSelectedContact(null)}
-                        onUpdate={crm.handleUpdateContact}
+                        onUpdate={erp.handleUpdateContact}
                     />
                 )}
 
                 {selectedCompany && (
                     <CompanyDetailModal
                         company={selectedCompany}
-                        contacts={crm.contacts}
-                        deals={crm.tasks}
+                        contacts={erp.contacts}
+                        deals={erp.tasks}
                         onClose={() => setSelectedCompany(null)}
-                        onUpdate={crm.handleUpdateCompany}
+                        onUpdate={erp.handleUpdateCompany}
                     />
                 )}
 
                 {isNewContactModalOpen && (
                     <NewContactModal
-                        companies={crm.companies}
+                        companies={erp.companies}
                         onClose={() => setIsNewContactModalOpen(false)}
-                        onCreate={crm.handleCreateContact}
+                        onCreate={erp.handleCreateContact}
                     />
                 )}
 
                 {isNewCompanyModalOpen && (
                     <NewCompanyModal
                         onClose={() => setIsNewCompanyModalOpen(false)}
-                        onCreate={crm.handleCreateCompany}
+                        onCreate={erp.handleCreateCompany}
                     />
                 )}
             </div>

@@ -14,6 +14,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "docx": "^9.5.1",
+    "dotenv": "^17.2.3",
     "export": "^0.1.337",
     "express": "^5.2.1",
     "express-rate-limit": "^8.1.0",
