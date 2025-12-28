@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Header from '../../components/ui/Header'; // Ajusta la ruta si es necesario
 import Sidebar from '../../components/ui/Sidebar'; // Ajusta la ruta si es necesario
 import { SendHorizontal, Sparkles, User, Bot, User as UserIcon } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
 const ChatbotHome = () => {
     // --- 1. ESTADO DEL LAYOUT ---
@@ -59,7 +60,7 @@ const ChatbotHome = () => {
 
         try {
             // 2. Llamada a TU API
-            const response = await fetch('https://Boostedapi.vercel.app/api/ai-chat', {
+            const response = await fetch(`${API_BASE_URL}/api/ai-chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

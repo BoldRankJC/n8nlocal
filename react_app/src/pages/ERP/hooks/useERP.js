@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Mail, AlertCircle, Slack, Zap, Phone, Database } from 'lucide-react';
 
-const API_BASE_URL = 'https://boostedapi.vercel.app/api/erp';
+import { API_BASE_URL as BASE_URL } from '../../../config';
+
+const API_BASE_URL = `${BASE_URL}/api/erp`;
 
 export const useERP = () => {
     // --- ESTADO CENTRALIZADO DEL ERP (viene de la API) ---

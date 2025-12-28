@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Info, AlertTriangle, CheckCircle, X, Trash2, Clock, Bell, Loader2 } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
 export const NotificationsPanel = ({ user, onClose, onUnreadChange, onViewAll }) => {
     // --- 1. ESTADO Y LÓGICA (Del NotificationsCard) ---
@@ -15,7 +16,7 @@ export const NotificationsPanel = ({ user, onClose, onUnreadChange, onViewAll })
 
             setIsLoading(true);
             try {
-                const res = await fetch(`https://Boostedapi.vercel.app/api/noti/${currentUser}`);
+                const res = await fetch(`${API_BASE_URL}/api/noti/${currentUser}`);
                 const data = await res.json();
 
                 // Normalizar datos
@@ -57,7 +58,7 @@ export const NotificationsPanel = ({ user, onClose, onUnreadChange, onViewAll })
             // UI Optimista
             setNotifications(prev => prev.map(n => ({ ...n, read: true })));
 
-            await fetch(`https://Boostedapi.vercel.app/api/noti/${mail}/leido-todas`, {
+            await fetch(`${API_BASE_URL}/api/noti/${mail}/leido-todas`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
             });
@@ -74,7 +75,7 @@ export const NotificationsPanel = ({ user, onClose, onUnreadChange, onViewAll })
             // UI Optimista
             setNotifications(prev => prev.filter(n => n.id !== id));
 
-            await fetch(`https://Boostedapi.vercel.app/api/noti/${mail}/${id}`, {
+            await fetch(`${API_BASE_URL}/api/noti/${mail}/${id}`, {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
             });
@@ -87,7 +88,7 @@ export const NotificationsPanel = ({ user, onClose, onUnreadChange, onViewAll })
         if (!mail) return;
         try {
             setNotifications([]);
-            await fetch(`https://Boostedapi.vercel.app/api/noti/${mail}`, {
+            await fetch(`${API_BASE_URL}/api/noti/${mail}`, {
                 method: "DELETE",
                 headers: { "Content-Type": "application/json" },
             });
@@ -101,7 +102,7 @@ export const NotificationsPanel = ({ user, onClose, onUnreadChange, onViewAll })
         setNotifications(prev =>
             prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
         );
-        
+
         if (notification.actionUrl) {
             window.location.href = notification.actionUrl;
         }
@@ -126,31 +127,31 @@ export const NotificationsPanel = ({ user, onClose, onUnreadChange, onViewAll })
     const getVisuals = (notif) => {
         // Prioridad ALTA domina el color
         if (notif.priority === 'high') {
-            return { 
-                icon: <AlertTriangle size={18} className="text-rose-500" />, 
+            return {
+                icon: <AlertTriangle size={18} className="text-rose-500" />,
                 bg: 'bg-rose-50 dark:bg-rose-900/20',
                 border: 'border-rose-100 dark:border-rose-900/30'
             };
         }
-        
+
         switch (notif.type) {
             case 'success':
-            case 'approval': 
-                return { 
-                    icon: <CheckCircle size={18} className="text-emerald-500" />, 
+            case 'approval':
+                return {
+                    icon: <CheckCircle size={18} className="text-emerald-500" />,
                     bg: 'bg-emerald-50 dark:bg-emerald-900/20',
                     border: 'border-emerald-100 dark:border-emerald-900/30'
                 };
-            case 'warning': 
+            case 'warning':
             case 'reminder':
-                return { 
-                    icon: <Clock size={18} className="text-amber-500" />, 
+                return {
+                    icon: <Clock size={18} className="text-amber-500" />,
                     bg: 'bg-amber-50 dark:bg-amber-900/20',
                     border: 'border-amber-100 dark:border-amber-900/30'
                 };
-            default: 
-                return { 
-                    icon: <Info size={18} className="text-indigo-500" />, 
+            default:
+                return {
+                    icon: <Info size={18} className="text-indigo-500" />,
                     bg: 'bg-indigo-50 dark:bg-indigo-900/20',
                     border: 'border-indigo-100 dark:border-indigo-900/30'
                 };
@@ -183,8 +184,8 @@ export const NotificationsPanel = ({ user, onClose, onUnreadChange, onViewAll })
                                 Marcar leídas
                             </button>
                         )}
-                        <button 
-                            onClick={onClose} 
+                        <button
+                            onClick={onClose}
                             className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                         >
                             <X size={18} />
@@ -195,10 +196,10 @@ export const NotificationsPanel = ({ user, onClose, onUnreadChange, onViewAll })
                 {/* List Container */}
                 <div className="max-h-[400px] overflow-y-auto p-2 space-y-1 custom-scrollbar relative min-h-[150px]">
                     {isLoading ? (
-                         <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 gap-2">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 gap-2">
                             <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
                             <span className="text-xs font-medium">Cargando...</span>
-                         </div>
+                        </div>
                     ) : notifications.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                             <div className="w-14 h-14 bg-gray-50 dark:bg-slate-800/50 rounded-2xl flex items-center justify-center mb-4 text-gray-300 dark:text-slate-600">
@@ -216,9 +217,9 @@ export const NotificationsPanel = ({ user, onClose, onUnreadChange, onViewAll })
                                     onClick={() => handleNotificationClick(notif)}
                                     className={`group relative p-4 rounded-2xl flex gap-4 transition-all cursor-pointer border
                                     ${notif.read
-                                        ? 'border-transparent hover:bg-gray-50 dark:hover:bg-slate-800/50 opacity-60 hover:opacity-100'
-                                        : `bg-white dark:bg-slate-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 ${style.border}`
-                                    }`}
+                                            ? 'border-transparent hover:bg-gray-50 dark:hover:bg-slate-800/50 opacity-60 hover:opacity-100'
+                                            : `bg-white dark:bg-slate-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 ${style.border}`
+                                        }`}
                                 >
                                     {/* Icon Container */}
                                     <div className={`w-10 h-10 rounded-xl shrink-0 flex items-center justify-center ${style.bg}`}>
@@ -272,9 +273,9 @@ export const NotificationsPanel = ({ user, onClose, onUnreadChange, onViewAll })
                             <Trash2 size={14} />
                             Borrar todas
                         </button>
-                        
+
                         {onViewAll && (
-                             <button
+                            <button
                                 onClick={onViewAll}
                                 className="text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 px-3 py-2 transition-colors"
                             >

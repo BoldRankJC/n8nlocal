@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Mail, AlertCircle, Slack, Zap, Phone, Database } from 'lucide-react';
 
-const API_BASE_URL = 'https://boostedapi.vercel.app/api/crm';
+import { API_BASE_URL as BASE_URL } from '../../../config';
+
+const API_BASE_URL = `${BASE_URL}/api/crm`;
 
 export const useCRM = () => {
     // --- ESTADO CENTRALIZADO DEL CRM (viene de la API) ---
@@ -21,7 +23,7 @@ export const useCRM = () => {
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await fetch(`${API_BASE_URL}`);
+            const response = await fetch(`${API_BASE_URL} `);
             if (!response.ok) throw new Error('Error al cargar datos del CRM.');
             const data = await response.json();
 
