@@ -14,7 +14,8 @@
   "dependencies": {
     "cors": "^2.8.5",
     "docx": "^9.5.1",
-    "express": "^5.1.0",
+    "export": "^0.1.337",
+    "express": "^5.2.1",
     "express-rate-limit": "^8.1.0",
     "fs-extra": "^11.3.2",
     "helmet": "^8.1.0",

@@ -1,4 +1,4 @@
-export async function validarToken(db, token) {
+async function validarToken(db, token) {
   console.log("TOKEN RECIBIDO: ", token);
   const tokenData = await db.collection("tokens").findOne({ "token": token });
 
@@ -22,11 +22,13 @@ export async function validarToken(db, token) {
     creacion.getFullYear() === ahora.getFullYear() &&
     creacion.getMonth() === ahora.getMonth() &&
     creacion.getDate() === ahora.getDate();
-/*
-  if (!mismoDia) {
-    await db.collection("tokens").deleteOne({ token });
-    return { ok: false, reason: "Antiguo" };
-  }
-*/
+  /*
+    if (!mismoDia) {
+      await db.collection("tokens").deleteOne({ token });
+      return { ok: false, reason: "Antiguo" };
+    }
+  */
   return { ok: true };
 }
+
+module.exports = { validarToken };

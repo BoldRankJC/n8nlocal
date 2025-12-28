@@ -1,91 +1,49 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Mail, AlertCircle, Slack, Zap, Phone, Database } from 'lucide-react';
-import { companyService, contactService, dealService } from '../services/mockServices';
+
+const API_BASE_URL = 'https://boostedapi.vercel.app/api/crm';
 
 export const useCRM = () => {
-    // --- PIPELINE STATE ---
+    // --- ESTADO CENTRALIZADO DEL CRM (viene de la API) ---
     const [tasks, setTasks] = useState([]);
-
-    // --- WON DEALS STATE ---
     const [wonDeals, setWonDeals] = useState([]);
-
-    // --- DATA STATE ---
     const [contacts, setContacts] = useState([]);
-    const [companies, setCompanies] = useState([]);
+    const [automations, setAutomations] = useState([]);
+    const [companies, setCompanies] = useState([]); // Nota: La API actual de CRM devuelve pipelines/contracts/automations. Revisar si devuelve companies.
+    const [integrations, setIntegrations] = useState([]);
 
-    // --- UI STATE (Specific to data manipulation that affects global view) ---
+    // --- ESTADO LOCAL DE LA UI ---
     const [showCelebration, setShowCelebration] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    // --- AUTOMATIONS STATE ---
-    const [automations, setAutomations] = useState([
-        { id: 1, name: 'Bienvenida Nuevo Lead', trigger: 'Nuevo Trato Creado', action: 'Enviar Email de Bienvenida', active: true, icon: Mail },
-        { id: 2, name: 'Alerta de Estancamiento', trigger: 'Sin actividad por 5 días', action: 'Notificar al Vendedor', active: true, icon: AlertCircle },
-        { id: 3, name: 'Celebración de Cierre', trigger: 'Estado cambia a Ganado', action: 'Mensaje a Slack #ventas', active: false, icon: Slack },
-        { id: 4, name: 'Alta Prioridad', trigger: 'Valor > $10,000', action: 'Marcar Prioridad Alta', active: true, icon: Zap },
-    ]);
+    // --- LOAD DATA ---
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        try {
+            const response = await fetch(`${API_BASE_URL}`);
+            if (!response.ok) throw new Error('Error al cargar datos del CRM.');
+            const data = await response.json();
 
-    // --- INTEGRATIONS STATE ---
-    const [integrations, setIntegrations] = useState([
-        { id: 1, name: 'Google Workspace', desc: 'Sincroniza emails y calendario.', connected: true, icon: Mail, color: 'text-red-500 bg-red-50 dark:bg-red-900/20' },
-        { id: 2, name: 'Slack', desc: 'Notificaciones de equipo en tiempo real.', connected: true, icon: Slack, color: 'text-purple-500 bg-purple-50 dark:bg-purple-900/20' },
-        { id: 3, name: 'Zoom', desc: 'Genera links de reuniones automáticamente.', connected: false, icon: Phone, color: 'text-blue-500 bg-blue-50 dark:bg-blue-900/20' },
-        { id: 4, name: 'ERP / Nómina', desc: 'Sincroniza datos de facturación.', connected: false, icon: Database, color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' },
-    ]);
+            setTasks(data.tasks || []);
+            setWonDeals(data.wonDeals || []);
+            setContacts(data.contacts || []);
+            setAutomations(data.automations || []);
+            setIntegrations(data.integrations || []);
+            // Si la API no devuelve companies, usaremos mock o un array vacío por ahora
+            setCompanies(data.companies || []);
 
-    // --- INITIAL DATA LOADING ---
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                // Mock initial data handling
-                const dealsData = [];
-                const contactsData = [];
-                const companiesData = [];
-
-                // Mapear Deals a formato Tasks
-                const formattedTasks = dealsData.map(d => ({
-                    id: d._id,
-                    title: d.title,
-                    description: '',
-                    status: d.status,
-                    priority: 'MEDIUM',
-                    assignee: 'YO',
-                    dueDate: new Date(d.createdAt).toLocaleDateString(),
-                    tags: [],
-                    client: d.company?.name || 'Sin Cliente',
-                    dealValue: d.value || 0,
-                    score: 50,
-                    comments: []
-                }));
-
-                setTasks(formattedTasks.filter(t => t.status !== 'DONE'));
-                setWonDeals(formattedTasks.filter(t => t.status === 'DONE'));
-
-                setContacts(contactsData.map(c => ({
-                    id: c._id,
-                    name: `${c.firstName} ${c.lastName}`,
-                    role: c.position,
-                    company: c.company?.name || 'Sin Empresa',
-                    email: c.email,
-                    status: 'Cliente',
-                    lastContact: 'Hoy',
-                    tickets: 0
-                })));
-
-                setCompanies(companiesData.map(c => ({
-                    id: c._id,
-                    name: c.name,
-                    industry: c.industry,
-                    relationshipStatus: c.relationshipStatus,
-                    logo: c.name[0],
-                    notes: []
-                })));
-
-            } catch (error) {
-                console.error("Error cargando datos:", error);
-            }
-        };
-        loadData();
+        } catch (err) {
+            console.error(err);
+            setError('Error al conectar con la API del CRM.');
+        } finally {
+            setLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     // --- COMPUTED STATS ---
     const stats = useMemo(() => {
@@ -94,185 +52,205 @@ export const useCRM = () => {
         const totalValue = activeValue + wonValue;
 
         const openDeals = tasks.length;
-        const totalWon = wonDeals.length + (tasks.filter(t => t.status === 'DONE').length);
+        const totalWon = wonDeals.length;
         const totalDeals = tasks.length + wonDeals.length;
         const conversionRate = totalDeals > 0 ? Math.round((totalWon / totalDeals) * 100) : 0;
 
         return { totalValue, openDeals, conversionRate, totalWon };
     }, [tasks, wonDeals]);
 
+    // --- ACTIONS (API INTERACTIONS) ---
 
-    // --- ACTIONS ---
-
-    const handleUpdateDeal = (updatedDeal) => {
-        setTasks(tasks.map(t => t.id === updatedDeal.id ? { ...t, ...updatedDeal } : t));
-    };
-
-    const handleDeleteDeal = async (dealId) => {
-        if (confirm('¿Estás seguro de eliminar este trato?')) {
-            try {
-                await dealService.delete(dealId);
-                setTasks(tasks.filter(t => t.id !== dealId));
-                return true; // Success
-            } catch (error) {
-                console.error("Error eliminando trato:", error);
-                return false;
-            }
-        }
-        return false;
-    };
-
-    const handleCreateContact = async (newContact) => {
-        try {
-            const { id, ...data } = newContact;
-            const created = await contactService.create(data);
-            const formatted = {
-                id: created._id,
-                name: `${created.firstName} ${created.lastName}`,
-                role: created.position,
-                company: created.company?.name || 'Sin Empresa',
-                email: created.email,
-                status: 'Cliente',
-                lastContact: 'Hoy',
-                tickets: 0
-            };
-            setContacts([...contacts, formatted]);
-            return true;
-        } catch (error) {
-            console.error("Error creando contacto:", error);
-            return false;
-        }
-    };
-
-    const handleUpdateContact = (updatedContact) => {
-        // Implement real update logic here
-        console.log('Contacto actualizado:', updatedContact);
-        setContacts(contacts.map(c => c.id === updatedContact.id ? updatedContact : c));
-    };
-
-    const handleCreateCompany = async (newCompany) => {
-        try {
-            const { id, ...data } = newCompany;
-            const created = await companyService.create(data);
-            const formatted = {
-                id: created._id,
-                name: created.name,
-                industry: created.industry,
-                relationshipStatus: created.relationshipStatus,
-                logo: created.name[0],
-                notes: []
-            };
-            setCompanies([...companies, formatted]);
-            return true;
-        } catch (error) {
-            console.error("Error creando empresa:", error);
-            return false;
-        }
-    };
-
-    const handleUpdateCompany = (updatedCompany) => {
-        console.log('Empresa actualizada:', updatedCompany);
-        setCompanies(companies.map(c => c.id === updatedCompany.id ? updatedCompany : c));
-    };
-
+    // 1. ADD TASK (DEAL)
     const handleAddTask = async (newTask) => {
         if (!newTask.title) return false;
 
-        try {
-            const dealData = {
-                title: newTask.title,
-                value: Number(newTask.dealValue) || 0,
-                status: 'TODO',
-            };
-            const created = await dealService.create(dealData);
+        const taskPayload = {
+            title: newTask.title,
+            description: newTask.description || '',
+            status: 'TODO',
+            priority: newTask.priority || 'MEDIUM',
+            assignee: newTask.assignee || 'YO',
+            dueDate: 'Por definir',
+            tags: ['Nuevo'],
+            client: newTask.client || 'Sin Cliente',
+            dealValue: Number(newTask.dealValue) || 0,
+            comments: [],
+            score: 0,
+            scoringCriteria: { budget: false, authority: false, need: false, timing: false }
+        };
 
-            const task = {
-                id: created._id,
-                title: created.title,
-                description: newTask.description,
-                status: 'TODO',
-                priority: newTask.priority,
-                assignee: newTask.assignee,
-                dueDate: 'Por definir',
-                tags: ['Nuevo'],
-                client: newTask.client || 'Sin Cliente',
-                dealValue: Number(newTask.dealValue) || 0,
-                comments: [],
-                score: 0,
-                scoringCriteria: { budget: false, authority: false, need: false, timing: false }
-            };
-            setTasks([...tasks, task]);
+        try {
+            const response = await fetch(API_BASE_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(taskPayload),
+            });
+            if (!response.ok) throw new Error('Error al crear el trato.');
+
+            await fetchData(); // Refrescar datos
             return true;
-        } catch (error) {
-            console.error("Error creando trato:", error);
+        } catch (err) {
+            console.error('Add task error:', err);
+            setError('Error al crear la oportunidad.');
             return false;
         }
     };
 
-    const handleMoveToWon = (taskId, callback) => {
+    // 2. UPDATE TASK
+    const handleUpdateTask = async (taskId, updates) => {
+        // Optimistic update (opcional, aquí hacemos fetch para asegurar consistencia)
+        // Para simplificar, llamamos a la API y refrescamos
+        try {
+            // Si updates es un objeto completo de tarea, extraemos solo los campos necesarios o enviamos todo
+            // La API espera un PUT en /:taskId
+            const response = await fetch(`${API_BASE_URL}/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates),
+            });
+            if (!response.ok) throw new Error('Error al actualizar el trato.');
+
+            await fetchData();
+            return true;
+        } catch (err) {
+            console.error('Update error:', err);
+            return false;
+        }
+    };
+
+    // Mapped aliases for compatibility with current views
+    const handleUpdateDeal = (updatedDeal) => handleUpdateTask(updatedDeal.id, updatedDeal);
+
+    // 3. MOVE TO WON
+    const handleMoveToWon = async (taskId, callback) => {
         const taskToMove = tasks.find(t => t.id === taskId);
-        if (taskToMove) {
-            setShowCelebration(true);
+        if (!taskToMove) return false;
 
-            // Allow UI to show celebration before actual move
+        setShowCelebration(true);
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/won/${taskId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            if (!response.ok) throw new Error('Error al mover a ganados.');
+
             setTimeout(async () => {
-                try {
-                    await dealService.update(taskId, { status: 'DONE' });
-
-                    setWonDeals([
-                        { ...taskToMove, status: 'DONE', score: 100 },
-                        ...wonDeals
-                    ]);
-                    setTasks(tasks.filter(t => t.id !== taskId));
-
-                    if (callback) callback();
-                    setShowCelebration(false);
-                } catch (error) {
-                    console.error("Error moviendo a ganado:", error);
-                    setShowCelebration(false);
-                }
+                await fetchData();
+                if (callback) callback();
+                setShowCelebration(false);
             }, 1800);
+            return true;
+
+        } catch (err) {
+            console.error('Move to won error:', err);
+            setError('Error al mover a clientes ganados.');
+            setShowCelebration(false);
+            return false;
+        }
+    };
+
+    // 4. DELETE DEAL (Not in standard CRM API exposed in Index.jsx but good to have)
+    // El CRM original no tiene DELETE expuesto en el frontend fácilmente, pero sí endpoint backend si existe.
+    // Revisando backend crm.js anterior: NO TIENE endpoint DELETE para tasks!
+    // Solo tiene PUT /won.
+    // Así que handleDeleteDeal no funcionará con la API actual a menos que agreguemos el endpoint.
+    // Dejaré una implementación mock o log para evitar crash, o implementaré si es crítico.
+    const handleDeleteDeal = async (dealId) => {
+        console.warn("DELETE not implemented in CRM API yet.");
+        // Mock optimista para UI
+        if (confirm('¿Estás seguro? (Nota: Esto no persiste en la API actual)')) {
+            setTasks(tasks.filter(t => t.id !== dealId));
             return true;
         }
         return false;
     };
 
-    const handleUpdateTask = (updatedTask) => {
-        setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t));
-    };
-
-    // Automation Actions
-    const handleSaveAutomation = (data, editingId) => {
+    // 5. AUTOMATIONS
+    const handleSaveAutomation = async (data, editingId) => {
         if (!data.name || !data.trigger || !data.action) return;
 
-        if (editingId) {
-            setAutomations(prev => prev.map(auto =>
-                auto.id === editingId
-                    ? { ...auto, name: data.name, trigger: data.trigger, action: data.action }
-                    : auto
-            ));
-        } else {
-            const newRule = {
-                id: Date.now(),
-                name: data.name,
-                trigger: data.trigger,
-                action: data.action,
-                active: true,
-                icon: Zap
-            };
-            setAutomations(prev => [...prev, newRule]);
+        const payload = { ...data, active: true, icon: 'Zap' };
+        const url = editingId ? `${API_BASE_URL}/automation/${editingId}` : `${API_BASE_URL}/automation`;
+        const method = editingId ? 'PUT' : 'POST';
+
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) throw new Error('Error al guardar automatización.');
+
+            await fetchData();
+        } catch (err) {
+            console.error(err);
         }
     };
 
-    const handleDeleteAutomation = (id) => {
-        setAutomations(prev => prev.filter(a => a.id !== id));
+    const toggleAutomation = async (id) => {
+        const auto = automations.find(a => a.id === id);
+        if (!auto) return;
+        try {
+            await fetch(`${API_BASE_URL}/automation/toggle/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ active: !auto.active }),
+            });
+            await fetchData();
+        } catch (err) { console.error(err); }
     };
 
-    const toggleAutomation = (id) => {
-        setAutomations(prev => prev.map(auto =>
-            auto.id === id ? { ...auto, active: !auto.active } : auto
-        ));
+    const handleDeleteAutomation = async (id) => {
+        try {
+            await fetch(`${API_BASE_URL}/automation/${id}`, { method: 'DELETE' });
+            await fetchData();
+        } catch (err) { console.error(err); }
     };
+
+
+    // 6. CONTACTS & COMPANIES (Mock implementation or separate endpoint needed)
+    // La API crm.js devuelte 'contacts' en GET /, pero no tiene POST.
+    // Mantendremos mock locale para crear contactos por ahora para no romper la UI.
+
+    const handleCreateContact = async (newContact) => {
+        // Mock
+        const formatted = {
+            id: Date.now(),
+            name: newContact.firstName + ' ' + newContact.lastName,
+            role: newContact.position,
+            company: newContact.company || 'Sin Empresa',
+            email: newContact.email,
+            status: 'Cliente',
+            lastContact: 'Hoy',
+            tickets: 0
+        };
+        setContacts(prev => [...prev, formatted]);
+        return true;
+    };
+
+    const handleUpdateContact = (updated) => {
+        setContacts(prev => prev.map(c => c.id === updated.id ? updated : c));
+    };
+
+    const handleCreateCompany = async (newCompany) => {
+        const formatted = {
+            id: Date.now(),
+            name: newCompany.name,
+            industry: newCompany.industry,
+            relationshipStatus: newCompany.relationshipStatus,
+            logo: newCompany.name[0],
+            notes: []
+        };
+        setCompanies(prev => [...prev, formatted]);
+        return true;
+    };
+
+    const handleUpdateCompany = (updated) => {
+        setCompanies(prev => prev.map(c => c.id === updated.id ? updated : c));
+    };
+
 
     return {
         // Data
@@ -283,23 +261,28 @@ export const useCRM = () => {
         automations,
         integrations,
         stats,
+        loading,
+        error,
 
         // UI State
         showCelebration,
-        setIntegrations, // Exposed setter for simpler toggle logic in view
+        setIntegrations,
 
         // Actions
+        handleAddTask,
+        handleUpdateTask,
         handleUpdateDeal,
+        handleMoveToWon,
         handleDeleteDeal,
+
+        handleSaveAutomation,
+        toggleAutomation,
+        handleDeleteAutomation,
+
+        // Contact/Company (Mocked for now)
         handleCreateContact,
         handleUpdateContact,
         handleCreateCompany,
-        handleUpdateCompany,
-        handleAddTask,
-        handleMoveToWon,
-        handleUpdateTask,
-        handleSaveAutomation,
-        handleDeleteAutomation,
-        toggleAutomation
+        handleUpdateCompany
     };
 };
