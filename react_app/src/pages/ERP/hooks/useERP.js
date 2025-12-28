@@ -4,6 +4,7 @@ import { Mail, AlertCircle, Slack, Zap, Phone, Database } from 'lucide-react';
 import { API_BASE_URL as BASE_URL } from '../../../config';
 
 const API_BASE_URL = `${BASE_URL}/api/erp`;
+//const API_BASE_URL = `http://localhost:3001/api/erp`;
 
 export const useERP = () => {
     // --- ESTADO CENTRALIZADO DEL ERP (viene de la API) ---

@@ -10,8 +10,8 @@ import {
 
 import { API_BASE_URL as BASE_URL } from '../../config';
 
-const API_BASE_URL = `http://localhost:3001/api/crm`;
-//const API_BASE_URL = `${BASE_URL}/api/crm`;
+//const API_BASE_URL = `http://localhost:3001/api/crm`;
+const API_BASE_URL = `${BASE_URL}/api/crm`;
 
 
 // Definición de constantes para el Kanban

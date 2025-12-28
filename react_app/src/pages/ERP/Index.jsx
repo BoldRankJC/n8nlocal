@@ -25,7 +25,7 @@ import { TaskDetailsModal } from './components/modals/TaskDetailsModal';
 // Logic Hook
 import { useERP } from './hooks/useERP';
 
-const CRMView = () => {
+const ERPView = () => {
     // --- HOOK ---
     const erp = useERP();
 
@@ -254,4 +254,4 @@ const CRMView = () => {
         </div>
     );
 };
-export default CRMView;
+export default ERPView;
