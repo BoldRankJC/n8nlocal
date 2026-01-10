@@ -115,7 +115,7 @@ router.put("/:taskId", async (req, res) => {
     try {
         const { taskId } = req.params;
         const updates = req.body;
-        
+
         // Convertir 'comments' a formato de array para manejar el set correctamente si existe
         if (updates.comments) {
             updates["tasks.$.comments"] = updates.comments;
@@ -148,7 +148,7 @@ router.put("/won/:taskId", async (req, res) => {
     try {
         const { taskId } = req.params;
         const crmState = await req.db.collection(CRM_COLLECTION).findOne({ _id: CRM_STATE_ID });
-        
+
         if (!crmState) return res.status(404).json({ error: "Estado del CRM no encontrado" });
 
         const taskToMove = crmState.tasks.find(t => t.id === taskId);
@@ -156,7 +156,7 @@ router.put("/won/:taskId", async (req, res) => {
 
         // 1. Eliminar de 'tasks' y 2. Añadir a 'wonDeals'
         const updatedTask = { ...taskToMove, status: 'DONE', score: 100, closedDate: new Date().toISOString() };
-        
+
         const result = await req.db.collection(CRM_COLLECTION).updateOne(
             { _id: CRM_STATE_ID },
             {
@@ -212,7 +212,7 @@ router.put("/automation/:autoId", async (req, res) => {
         for (const key in updates) {
             setUpdates[`automations.$.${key}`] = updates[key];
         }
-        
+
         const result = await req.db.collection(CRM_COLLECTION).updateOne(
             { _id: CRM_STATE_ID, "automations.id": autoIdNum },
             { $set: setUpdates }

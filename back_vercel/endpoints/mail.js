@@ -14,12 +14,12 @@ const router = express.Router();
 // ⚠️ Reemplaza por tus valores (o idealmente usa variables de entorno)
 const ACCESS_KEY = "MI_CLAVE_SECRETA_AQUI";
 const MAIL_CREDENTIALS = {
-  host: "smtp.google.com",
-  port: 465,
-  secure: true, // true si usas 465
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // false para 587 (STARTTLS)
   auth: {
-    user: "cvalencia1@boosted.cl",
-    pass: "Kh68_74xx",
+    user: process.env.MAIL_USER || "cvalencia1@boosted.cl", // Reemplaza en .env
+    pass: process.env.MAIL_PASS || "Kh68_74xx", // Reemplaza en .env con App Password
   },
 };
 
@@ -68,22 +68,33 @@ function validarDestinatarios(raw) {
   return { lista };
 }
 
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("❌ Error al conectar al SMTP:", error);
-  } else {
-    console.log("✅ Servidor SMTP listo para enviar correos");
-  }
-});
+// --- VERIFICACIÓN OPCIONAL ---
+const isConfigured = MAIL_CREDENTIALS.auth.pass && MAIL_CREDENTIALS.auth.pass !== "PUT_YOUR_APP_PASSWORD_HERE" && MAIL_CREDENTIALS.auth.pass !== "Kh68_74xx";
+
+if (isConfigured) {
+  transporter.verify((error, success) => {
+    if (error) {
+      console.error("❌ Error al conectar al SMTP:", error);
+    } else {
+      console.log("✅ Servidor SMTP listo para enviar correos");
+    }
+  });
+} else {
+  console.log("⚠️ SMTP no configurado (contraseña inválida o placeholder). El envío de correos estará deshabilitado.");
+}
 
 
 // --- RUTA PRINCIPAL ---
 router.post("/send", async (req, res) => {
+  if (!isConfigured) {
+    return res.status(503).json({ error: "Servicio de correo deshabilitado temporalmente (faltan credenciales)." });
+  }
+
   try {
     const { accessKey, to, subject, html, text, from } = req.body || {};
 
     // Protección por clave
-    if (accessKey !== ACCESS_KEY){
+    if (accessKey !== ACCESS_KEY) {
       return res.status(401).json({ error: "Clave de acceso inválida." });
     }
     // Validaciones

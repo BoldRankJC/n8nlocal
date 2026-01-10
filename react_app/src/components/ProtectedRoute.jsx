@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
+import { API_BASE_URL } from '../config';
 
 export default function ProtectedRoute({ children }) {
   const [loading, setLoading] = useState(true);
@@ -19,12 +20,12 @@ export default function ProtectedRoute({ children }) {
       }
 
       try {
-        const res = await fetch("https://Boostedapi.vercel.app/api/auth/validate", {
+        const res = await fetch(`${API_BASE_URL}/api/auth/validate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token, email, cargo }),
         });
-        if (cargo == "Admin"){
+        if (cargo == "Admin") {
           setIsAuth(res.ok);
         } else {
           alert("Requiere elevacion de permisos...")

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowRight, AlertCircle } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
 const Login = () => {
     // --- Lógica de Navegación y Estado ---
@@ -20,7 +21,7 @@ const Login = () => {
         setIsLoading(true);
 
         try {
-            const res = await fetch("https://Boostedapi.vercel.app/api/auth/login", {
+            const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),
@@ -52,7 +53,7 @@ const Login = () => {
 
     return (
         <div className="min-h-screen w-full flex items-center justify-center bg-[#f0f4f8] dark:bg-[#0f172a] relative overflow-hidden font-sans transition-colors duration-500">
-            
+
             {/* 1. Decoraciones de Fondo Animadas */}
             <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-300/30 dark:bg-indigo-900/20 rounded-full blur-[120px] animate-pulse pointer-events-none"></div>
             <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-300/30 dark:bg-purple-900/20 rounded-full blur-[120px] animate-pulse pointer-events-none" style={{ animationDelay: '2s' }}></div>
@@ -72,7 +73,7 @@ const Login = () => {
 
                     {/* Formulario */}
                     <form onSubmit={handleSubmit} className="space-y-5">
-                        
+
                         {/* Mensaje de Error */}
                         {error && (
                             <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 px-4 py-3 rounded-xl text-sm flex items-start gap-3 animate-in fade-in slide-in-from-top-2">

@@ -4,6 +4,7 @@ import {
     UserPlus, Trash2, Briefcase, Shield, Building2, Zap, X, Check,
     Users, ChevronDown, Loader2, Mail, Search, Filter
 } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
 const AVAILABLE_SERVICES = [
     "Seguro Médico Premium",
@@ -54,7 +55,7 @@ export const UsersView = () => {
             try {
                 setLoadingData(true);
                 // Fetch Empresas
-                const empRes = await fetch('https://Boostedapi.vercel.app/api/auth/empresas/todas');
+                const empRes = await fetch(`${API_BASE_URL}/api/auth/empresas/todas`);
                 if (empRes.ok) {
                     const empData = await empRes.json();
                     setEmpresas(empData.map(e => e.nombre));
@@ -63,7 +64,7 @@ export const UsersView = () => {
                 }
 
                 // Fetch Usuarios
-                const userRes = await fetch(`https://Boostedapi.vercel.app/api/auth/`);
+                const userRes = await fetch(`${API_BASE_URL}/api/auth/`);
                 if (userRes.ok) {
                     const userData = await userRes.json();
                     setUsers(userData.reverse());
@@ -81,7 +82,7 @@ export const UsersView = () => {
     const refreshUsers = async () => {
         try {
             setLoadingData(true);
-            const res = await fetch(`https://Boostedapi.vercel.app/api/auth/`);
+            const res = await fetch(`${API_BASE_URL}/api/auth/`);
             const data = await res.json();
             setUsers(data.reverse());
         } catch (e) { console.error(e) } finally { setLoadingData(false); }
@@ -106,7 +107,7 @@ export const UsersView = () => {
 
         setIsLoading(true);
         try {
-            const userResponse = await fetch('https://Boostedapi.vercel.app/api/auth/register', {
+            const userResponse = await fetch(`${API_BASE_URL}/api/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...formData, pass: "", estado: "pendiente" }),
@@ -121,7 +122,7 @@ export const UsersView = () => {
             const savedUser = saved?.user;
 
             // Email logic (Simplified for UI demo)
-            await fetch('https://Boostedapi.vercel.app/api/mail/send', {
+            await fetch(`${API_BASE_URL}/api/mail/send`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

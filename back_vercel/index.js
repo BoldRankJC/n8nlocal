@@ -4,10 +4,11 @@ const { MongoClient } = require("mongodb");
 
 // Importar rutas
 const authRoutes = require("./endpoints/auth");
-const mailRoutes = require("./endpoints/mail");
+//const mailRoutes = require("./endpoints/mail");
 const noti = require("./endpoints/notificaciones");
 const menu = require("./endpoints/web");
 const crm = require("./endpoints/crm");
+const erp = require("./endpoints/erp");
 
 const app = express();
 //actualizando
@@ -16,8 +17,12 @@ app.use(cors());
 
 app.use(express.json());
 
-// Configurar conexión a MongoDB (desde variable de entorno)
-const client = new MongoClient(process.env.MONGO_URI);
+// Configurar conexión a MongoDB (desde variable de entorno o local por defecto)
+// Docker MongoDB usa autenticación: root:example
+const mongoUri = process.env.MONGO_URI || "mongodb://root:example@localhost:27017/n8n_local?authSource=admin";
+console.log("Intentando conectar a MongoDB con URI:", mongoUri.replace(/:[^:@]+@/, ':****@'));
+
+const client = new MongoClient(mongoUri);
 let db;
 
 async function connectDB() {
@@ -42,10 +47,11 @@ app.use(async (req, res, next) => {
 
 // Rutas
 app.use("/api/auth", authRoutes);
-app.use("/api/mail", mailRoutes);
+//app.use("/api/mail", mailRoutes);
 app.use("/api/noti", noti);
 app.use("/api/menu", menu);
 app.use("/api/crm", crm);
+app.use("/api/erp", erp);
 
 // Ruta base
 app.get("/", (req, res) => {
